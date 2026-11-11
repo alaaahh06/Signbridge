@@ -48,16 +48,17 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
 .count{position:absolute;inset:0;z-index:2;display:grid;place-items:center;pointer-events:none;font:600 100px/1 var(--font-head);color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);font-size:clamp(72px,34cqw,240px)}
 .count.pop{animation:pop .5s ease-out}
 @keyframes pop{from{transform:scale(1.3);opacity:.2}to{transform:scale(1);opacity:1}}
-.rec-badge{position:absolute;left:12px;top:12px;z-index:5;background:rgba(0,0,0,.6);color:var(--red);border-radius:999px;padding:5px 10px}
+.rec-badge{position:absolute;left:12px;top:12px;z-index:5;background:rgba(12,12,14,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);color:var(--red);border-radius:999px;padding:5px 10px}
 .rec-badge::before{content:"\25CF  ";animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-.stamp{position:absolute;left:50%;top:50%;z-index:6;opacity:0;pointer-events:none;white-space:nowrap;background:rgba(10,10,11,.85);border:1px solid var(--green);border-radius:999px;color:var(--green);padding:8px 18px;font:600 18px/1 var(--font-head);transform:translate(-50%,-50%);max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.stamp{position:absolute;left:50%;top:50%;z-index:6;opacity:0;pointer-events:none;white-space:nowrap;background:rgba(12,12,14,.5);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--green);border-radius:999px;color:var(--green);padding:8px 18px;font:600 18px/1 var(--font-head);transform:translate(-50%,-50%);max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .stamp.bad{border-color:var(--red);color:var(--red)}
 .stamp.show{animation:stamp 1.6s ease-out forwards}
 @keyframes stamp{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}
-.status{display:flex;gap:12px;align-items:baseline;margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-height:46px}
+.status{position:absolute;left:10px;right:10px;bottom:10px;z-index:5;display:flex;gap:10px;align-items:baseline;padding:8px 12px;border-radius:10px;background:rgba(12,12,14,.45);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(255,255,255,.12)}
+.stage-msg:not([hidden])~.status{display:none}
 .s-label{font:500 11px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:var(--muted)}
-.s-text{font-size:14px}
+.s-text{font-size:13px;line-height:1.35}
 .status[data-s="ok"] .s-label{color:var(--green)}
 .status[data-s="rec"] .s-label,.status[data-s="warn"] .s-label,.status[data-s="error"] .s-label{color:var(--red)}
 .status[data-s="busy"] .s-label{color:var(--accent)}
@@ -117,7 +118,7 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
 .placeholder{margin-top:24px;padding:24px 20px}
 .placeholder h2{font:600 28px/1.1 var(--font-head);letter-spacing:-.01em;text-transform:none;color:var(--text);margin:10px 0 8px}
 .placeholder p{margin:0;color:var(--muted)}
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(10,10,11,.9);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .tabs-in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
 .track{display:none}
 .tab{min-height:60px;padding:8px 0;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:500 12px/1 var(--font-body);cursor:pointer;touch-action:manipulation}
@@ -131,6 +132,17 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
 .modal h2{font:600 20px/1.2 var(--font-head);text-transform:none;letter-spacing:0;color:var(--text)}
 .modal p{margin:0 0 18px;color:var(--muted)}
 .modal .btn{width:100%}.modal .btn+.btn{margin-top:10px}
+.hud{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.hud-item{display:flex;flex-direction:column;gap:4px}
+.hud-item b{font:600 20px/1 var(--font-head);font-variant-numeric:tabular-nums}
+.hud-lv .label b{font:inherit;color:var(--accent)}
+.xpbar{height:6px;border-radius:3px;background:var(--raised);overflow:hidden;margin-top:4px}
+.xpbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.chip.done .chip-n{color:var(--green);font-size:13px}
+.chip.on.done .chip-n{color:#06101f}
+.burst{position:absolute;left:50%;top:50%;z-index:7;width:8px;height:8px;margin:-4px;border-radius:50%;pointer-events:none;animation:burst .9s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) scale(.3);opacity:0}}
+#glCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 @media (min-width:700px){
   :root{--stage-h:52vh}
   .page{max-width:920px;padding-left:28px;padding-right:28px}
@@ -181,6 +193,12 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
   </header>
   
 
+  <section class="hud" aria-label="Your progress">
+    <div class="hud-item"><span class="label">Streak</span><b id="hudStreak">0</b></div>
+    <div class="hud-item hud-lv"><span class="label">Level <b id="hudLv">1</b></span><div class="xpbar"><i id="hudXp"></i></div></div>
+    <div class="hud-item"><span class="label">Unlocked</span><b id="hudUnlock">0/0</b></div>
+  </section>
+
   <main>
     <!-- ============ CAPTURE ============ -->
     <section class="screen active" id="screen-capture" aria-label="Capture">
@@ -214,11 +232,11 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
             <div class="count" id="count" aria-hidden="true"></div>
             <div class="rec-badge label" id="recBadge" hidden>REC</div>
             <div class="stamp" id="stamp" aria-hidden="true"></div>
-          </div>
-        </div>
         <div class="status" id="status" data-s="idle" role="status" aria-live="polite">
           <span class="s-label" id="sLabel">Camera off</span>
           <span class="s-text" id="sText">Tap Start camera to begin.</span>
+        </div>
+          </div>
         </div>
         <button class="btn btn-red btn-big btn-wide" id="recBtn" type="button">Record HELLO</button>
         <div class="card rec-card">
@@ -236,6 +254,7 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
         <h2><span class="num">3</span>Check it in 3D</h2>
         <div class="card">
           <div class="viewer" id="viewer">
+            <canvas id="glCanvas" aria-hidden="true"></canvas>
             <canvas id="viewCanvas" aria-label="3D replay of your last take. Drag sideways to turn it."></canvas>
             <div class="viewer-empty" id="viewerEmpty"><span class="note">Record a take and it spins here.</span></div>
           </div>
@@ -245,7 +264,7 @@ h2{font:600 13px/1.2 var(--font-mono);letter-spacing:.08em;text-transform:upperc
             <span class="mono" id="viewerInfo">&nbsp;</span>
           </div>
         </div>
-        <p class="hint note">Drag sideways to turn it. The dashed lines trace your wrists.</p>
+        <p class="hint note">Drag sideways to turn it. The trails follow your wrists.</p>
       </div>
 
       <div class="block b-takes">
@@ -503,10 +522,11 @@ function renderSigns() {
   signs.forEach((name) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "chip" + (name === selected ? " on" : "");
+    const cnt = (dataset[name] || []).length;
+    b.className = "chip" + (name === selected ? " on" : "") + (cnt >= GOAL ? " done" : "");
     b.setAttribute("aria-pressed", name === selected ? "true" : "false");
     const n = document.createElement("span"); n.className = "chip-name"; n.textContent = name;
-    const c = document.createElement("span"); c.className = "chip-n"; c.textContent = String((dataset[name] || []).length);
+    const c = document.createElement("span"); c.className = "chip-n"; c.textContent = cnt >= GOAL ? "\u2713" : String(cnt);
     b.append(n, c);
     b.addEventListener("click", () => pickSign(name));
     chipsEl.appendChild(b);
@@ -745,6 +765,58 @@ function beginRecording() {
   renderStatus();
 }
 
+/* ---------- game layer: streak, XP, unlocks ---------- */
+const GOAL = 10, GAME_KEY = "sign-game-v1";
+let game = loadJSON(GAME_KEY, null);
+if (!game || typeof game !== "object") game = {};
+game = { streak: game.streak | 0, best: game.best | 0, lastDay: game.lastDay || "", xp: game.xp | 0, unlocked: game.unlocked || {} };
+const dayKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function liveStreak() {
+  const now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
+  return game.lastDay === dayKey(now) || game.lastDay === dayKey(y) ? game.streak : 0;
+}
+function renderHud() {
+  $("hudStreak").textContent = String(liveStreak());
+  $("hudLv").textContent = String(Math.floor(game.xp / 100) + 1);
+  $("hudXp").style.width = (game.xp % 100) + "%";
+  const done = signs.filter((n) => (dataset[n] || []).length >= GOAL).length;
+  $("hudUnlock").textContent = done + "/" + signs.length;
+}
+function takeQuality(sample) {
+  const has = (f, base) => { for (let i = 0; i < 63; i++) if (f[base + i] !== 0) return true; return false; };
+  let ok = 0;
+  sample.forEach((f) => { if (has(f, 99) || has(f, 162)) ok++; });
+  const pct = Math.round((ok / Math.max(1, sample.length)) * 100);
+  return { pct, label: pct >= 90 ? "Clean" : pct >= 60 ? "Good" : "Rough", bonus: pct >= 90 ? 5 : 0 };
+}
+function awardTake(sign, n, q) {
+  const today = dayKey(new Date());
+  if (game.lastDay !== today) {
+    game.streak = liveStreak() + 1;
+    game.lastDay = today;
+    game.best = Math.max(game.best, game.streak);
+  }
+  let xp = 10 + q.bonus, unlocked = false;
+  if (n >= GOAL && !game.unlocked[sign]) { game.unlocked[sign] = true; xp += 50; unlocked = true; }
+  game.xp += xp;
+  saveJSON(GAME_KEY, game);
+  renderHud();
+  return { xp, unlocked };
+}
+function burst() {
+  const cols = ["#8ab4ff", "#4cc38a", "#ededee", "#ff6b61"];
+  for (let i = 0; i < 18; i++) {
+    const e = document.createElement("i");
+    e.className = "burst";
+    const a = (i / 18) * Math.PI * 2, d = 70 + Math.random() * 70;
+    e.style.setProperty("--dx", Math.cos(a) * d + "px");
+    e.style.setProperty("--dy", Math.sin(a) * d + "px");
+    e.style.background = cols[i % cols.length];
+    stage.appendChild(e);
+    setTimeout(() => e.remove(), 950);
+  }
+}
+
 function finishRecording() {
   const sign = recSign;
   const sample = frames;
@@ -756,9 +828,12 @@ function finishRecording() {
     dataset[sign].pop();
     showFlash("bad", "Storage full", "The browser has no more room. Download your data, then clear some takes.", 6000);
   } else {
-    showFlash("ok", "Saved", sign + " saved. You now have " + dataset[sign].length + " take" + (dataset[sign].length === 1 ? "" : "s") + ".");
+    const n = dataset[sign].length, q = takeQuality(sample), r = awardTake(sign, n, q);
+    showFlash("ok", r.unlocked ? sign + " unlocked" : "Saved",
+      sign + " take " + n + " \u00b7 " + q.label + " (" + q.pct + "% hands tracked) \u00b7 +" + r.xp + " XP" + (r.unlocked ? " \u00b7 sign unlocked" : ""), r.unlocked ? 5000 : 3500);
+    if (r.unlocked) burst();
   }
-  renderSigns(); renderTakes();
+  renderSigns(); renderTakes(); renderHud();
 }
 
 function abortRecording(kind, label, text) {
@@ -779,7 +854,7 @@ const V_LINES = [[11,12],[11,13],[13,15],[12,14],[14,16],[7,3],[3,2],[2,1],[1,0]
 const FRAME_MS = 55;
 const PITCH = 0.2;
 
-let viewTake = null, viewBox = null;
+let viewTake = null, viewBox = null, gl = null;
 let viewPlaying = true, viewFrame = 0, viewAcc = 0, viewLast = 0;
 let viewYaw = 0.35, viewDir = 1, viewDrag = null;
 let viewVisible = true, viewDirty = true, viewInfoText = "";
@@ -806,6 +881,7 @@ function prepareViewer() {
   let r = 0.5;
   real.forEach((p) => { r = Math.max(r, Math.hypot(p[0] - cx, p[1] - cy, p[2] - cz)); });
   viewBox = { cx, cy, cz, r, D: r * 4, ring: mx[1] + 0.08 * r };
+  if (gl) glPrepare();
 }
 
 function refreshViewer() {
@@ -837,6 +913,7 @@ function updateViewerInfo() {
 }
 
 function drawViewer() {
+  if (gl) { drawGL(); return; }
   const rect = viewCanvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const W = Math.max(1, Math.round(rect.width * dpr)), H = Math.max(1, Math.round(rect.height * dpr));
@@ -937,6 +1014,86 @@ function drawViewer() {
   };
   [0, 11, 12, 13, 14, 15, 16].forEach((i) => dot(getPt(f, "p", i), lw * 0.95));
   [4, 8, 12, 16, 20].forEach((i) => { dot(getPt(f, "l", i), lw * 0.7); dot(getPt(f, "r", i), lw * 0.7); });
+}
+
+/* ---------- three.js take viewer (falls back to the 2D drawing if it can't load) ---------- */
+function glPrepare() {
+  const { THREE, group, ring, trailL, trailR } = gl, vb = viewBox, k = 1.6 / vb.r;
+  gl.k = k;
+  const P = (p) => new THREE.Vector3(-(p[0] - vb.cx) * k, -(p[1] - vb.cy) * k, -(p[2] - vb.cz) * k);
+  const fill = (line, idx) => {
+    line.geometry.dispose();
+    line.geometry = new THREE.BufferGeometry().setFromPoints(viewTake.map((fr) => P(getPt(fr, "p", idx))));
+  };
+  fill(trailL, 15); fill(trailR, 16);
+  ring.position.y = -(vb.ring - vb.cy) * k;
+  gl.P = P;
+}
+function drawGL() {
+  if (!viewTake || !viewBox || !gl.P) return;
+  const { THREE, renderer, scene, camera, group, segs, joints } = gl;
+  const rect = viewCanvas.getBoundingClientRect();
+  const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height));
+  if (gl.w !== W || gl.h !== H) {
+    gl.w = W; gl.h = H;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(W, H, false);
+    camera.aspect = W / H; camera.updateProjectionMatrix();
+  }
+  const f = viewTake[viewFrame], P = gl.P;
+  const pt = (g, i) => { const p = getPt(f, g, i); return p ? P(p) : null; };
+  const origin = P([0, 0, 0]);
+  for (const sg of segs) {
+    const a = sg.g1 === "o" ? origin : pt(sg.g1, sg.i1), b = pt(sg.g2, sg.i2), m = sg.mesh;
+    if (!a || !b) { m.visible = false; continue; }
+    gl.dir.subVectors(b, a);
+    const len = gl.dir.length() || 1e-4;
+    m.visible = true;
+    m.position.addVectors(a, b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(gl.up, gl.dir.normalize());
+    m.scale.set(sg.r, len, sg.r);
+  }
+  for (const j of joints) {
+    const p = pt(j.g, j.i);
+    if (!p) { j.mesh.visible = false; continue; }
+    j.mesh.visible = true; j.mesh.position.copy(p); j.mesh.scale.setScalar(j.r);
+  }
+  group.rotation.y = viewYaw;
+  renderer.render(scene, camera);
+}
+async function initGL() {
+  try {
+    const THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+    const renderer = new THREE.WebGLRenderer({ canvas: $("glCanvas"), antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
+    camera.position.set(0, 1.1, 5.4); camera.lookAt(0, 0, 0);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(2, 4, 5); scene.add(key);
+    const group = new THREE.Group(); scene.add(group);
+    const cyl = new THREE.CylinderGeometry(1, 1, 1, 10), sph = new THREE.SphereGeometry(1, 14, 10);
+    const mat = (c) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.55, roughness: 0.4 });
+    const mBody = mat(0xa8a8b0), mL = mat(0xff6b61), mR = mat(0x6ea8ff), mHead = mat(0xededee);
+    const segs = [], joints = [];
+    const addSeg = (g1, i1, g2, i2, m, r) => { const mesh = new THREE.Mesh(cyl, m); group.add(mesh); segs.push({ g1, i1, g2, i2, mesh, r }); };
+    const addJoint = (g, i, m, r) => { const mesh = new THREE.Mesh(sph, m); group.add(mesh); joints.push({ g, i, mesh, r }); };
+    for (const [a, b] of V_LINES) addSeg("p", a, "p", b, mBody, 0.035);
+    addSeg("o", 0, "p", 0, mBody, 0.035);
+    for (const [a, b] of HAND_LINES) { addSeg("l", a, "l", b, mL, 0.018); addSeg("r", a, "r", b, mR, 0.018); }
+    [11, 12, 13, 14, 15, 16].forEach((i) => addJoint("p", i, mBody, 0.06));
+    addJoint("p", 0, mHead, 0.13);
+    for (let i = 0; i < 21; i++) { addJoint("l", i, mL, 0.026); addJoint("r", i, mR, 0.026); }
+    const line = (c) => { const l = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.5 })); group.add(l); return l; };
+    const trailL = line(0xff6b61), trailR = line(0x6ea8ff);
+    const ringPts = []; for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; ringPts.push(new THREE.Vector3(Math.cos(a) * 1.52, 0, Math.sin(a) * 1.52)); }
+    const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14 }));
+    group.add(ring);
+    gl = { THREE, renderer, scene, camera, group, segs, joints, ring, trailL, trailR, dir: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), w: 0, h: 0 };
+    vctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
+    if (viewTake) glPrepare();
+    viewDirty = true;
+  } catch (e) { gl = null; /* keep the 2D viewer */ }
 }
 
 function viewerTick(now) {
@@ -1094,6 +1251,8 @@ renderSigns();
 renderTakes();
 renderStatus();
 loop();
+renderHud();
+initGL();
 </script>
 </body>
 </html>
