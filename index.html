@@ -170,8 +170,6 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .rc-hist{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 .rc-hist span{padding:7px 12px;border:1px solid #2e2e32;border-radius:999px;font:700 15px/1 var(--dot)}
 .rc-hist span:first-child{background:#fff;color:#000;border-color:#fff}
-.sn-text{font:700 32px/1.25 var(--dot);min-height:120px;overflow-wrap:anywhere;margin-bottom:18px}
-.sn-text.empty{font:400 14px/1.5 var(--font-mono);color:var(--muted)}
 @media (min-width:700px){
   :root{--stage-h:52vh}
   .page{max-width:920px;padding-left:28px;padding-right:28px}
@@ -358,26 +356,10 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
     </section>
 
     <section class="screen" id="screen-sentence" aria-label="Sentence">
-      <div class="hud train-hud rc-hud">
-        <div class="hud-item"><span class="label">Last</span><b id="snLast">--</b></div>
-        <div class="hud-item"><span class="label">Words</span><b id="snCount">0</b></div>
-        <div class="hud-item"><span class="label">Spoken</span><b id="snSpoken">0</b></div>
-      </div>
-      <div class="block">
-        <h2><span class="num">04</span> Sentence</h2>
-        <div class="sn-text empty" id="snText">Sign in Recognize or tap words below.</div>
-        <div class="btn-row"><button class="btn btn-sign btn-big" id="snSpeak" type="button">Speak</button><button class="btn btn-big" id="snCopy" type="button">Copy</button></div>
-        <div class="viewer-bar"><span class="label">Speed</span><input type="range" id="snRate" min="0.6" max="1.4" step="0.1" value="1" aria-label="Speech speed"><span class="mono" id="snVoice"></span></div>
-      </div>
-      <div class="block">
-        <h2><span class="num">&middot;</span> Words</h2>
-        <div class="chips" id="snWords"></div>
-        <p class="hint" id="snEmpty">No words yet. Words you sign in Recognize land here by themselves.</p>
-        <div class="btn-row"><button class="btn" id="snUndo" type="button">Undo last</button><button class="btn btn-clear" id="snClear" type="button">Clear</button></div>
-      </div>
-      <div class="block">
-        <h2><span class="num">&middot;</span> Add a word</h2>
-        <div class="chips" id="snPick"></div>
+      <div class="card placeholder">
+        <span class="label">Coming in a later step</span>
+        <h2>Sentence</h2>
+        <p>Here the recognized words will be turned into a natural English sentence and read aloud.</p>
       </div>
     </section>
   </main>
@@ -1292,37 +1274,16 @@ async function startCamera() {
 startBtn.addEventListener("click", startCamera);
 
 /* ---------- Train: sequence matching (DTW + nearest neighbour) ---------- */
-const MODEL_KEY = "sign-model-v2", RS_N = 16, DTW_BAND = 4, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
+const MODEL_KEY = "sign-model-v1", DTW_BAND = 8, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
 let model = loadJSON(MODEL_KEY, null), training = false;
-function resampleTake(take, N) {
-  const n = take.length, out = [];
-  for (let i = 0; i < N; i++) out.push(take[Math.round(i * (n - 1) / (N - 1))]);
-  return out;
-}
-/* Speed-independent features: every take is stretched to RS_N frames, and hand shape is
-   measured relative to each wrist so fast and slow signs look the same. */
-function handShape(f, base, o, d) {
-  const wx = f[base], wy = f[base + 1], wz = f[base + 2];
-  if (wx === 0 && wy === 0 && wz === 0) { for (let i = 0; i < 63; i++) d[o + i] = 0; return; }
-  const mx = f[base + 27] - wx, my = f[base + 28] - wy, mz = f[base + 29] - wz;
-  const s = Math.hypot(mx, my, mz) || 0.1;
-  for (let i = 0; i < 21; i++) {
-    d[o + i * 3] = (f[base + i * 3] - wx) / s * 0.6;
-    d[o + i * 3 + 1] = (f[base + i * 3 + 1] - wy) / s * 0.6;
-    d[o + i * 3 + 2] = (f[base + i * 3 + 2] - wz) / s * 0.6;
-  }
-}
 function takeFeatures(take) {
-  const rs = resampleTake(take, RS_N);
-  const dim = POSE_USE.length * 3 + 126 + 126, d = new Float32Array(rs.length * dim);
-  rs.forEach((f, t) => {
+  const dim = POSE_USE.length * 3 + 126, d = new Float32Array(take.length * dim);
+  take.forEach((f, t) => {
     let o = t * dim;
     for (const i of POSE_USE) { d[o++] = f[i * 3]; d[o++] = f[i * 3 + 1]; d[o++] = f[i * 3 + 2]; }
     for (let i = 99; i < 225; i++) d[o++] = f[i];
-    handShape(f, 99, o, d); o += 63;
-    handShape(f, 162, o, d);
   });
-  return { d, n: rs.length, dim };
+  return { d, n: take.length, dim };
 }
 function dtw(a, b) {
   const n = a.n, m = b.n, dim = a.dim, INF = 1e9, w = Math.max(DTW_BAND, Math.abs(n - m));
@@ -1424,7 +1385,7 @@ $("trBtn").addEventListener("click", runTrain);
 $("trGo").addEventListener("click", () => switchTab("capture"));
 
 /* ---------- Recognize: live reading + challenge ---------- */
-const RC_EVERY = 120, RC_WINDOWS = [500, 800, 1100], RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
+const RC_EVERY = 350, RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
 let rcBuf = [], rcTpl = [], rcLastEval = 0, rcCand = "", rcCandN = 0, rcLast = "", rcArmed = true, rcHist = [], rcUi = 0;
 const ch = { on: false, target: "", end: 0, shown: 0, score: 0 };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -1441,29 +1402,22 @@ function rcShow(word, conf, sub) {
 }
 function rcFeed(pose, left, right) {
   if (!rcReady() || ch.on === undefined) return;
-  const f = buildFrame(pose, left, right), now = performance.now();
+  const f = buildFrame(pose, left, right);
   if (!f) { rcBuf = []; rcShow(null, 0, "I can't see your shoulders. Step back a little."); return; }
-  rcBuf.push({ f, t: now }); while (rcBuf.length && now - rcBuf[0].t > 1300) rcBuf.shift();
-  if (now - rcLastEval < RC_EVERY) return;
-  if (rcBuf.length < 8) return;
+  rcBuf.push(f); if (rcBuf.length > FRAMES_PER_SAMPLE) rcBuf.shift();
+  const now = performance.now();
+  if (rcBuf.length < FRAMES_PER_SAMPLE || now - rcLastEval < RC_EVERY) return;
   rcLastEval = now;
-  // try several window lengths so fast and slow signs both fit; keep the best match per sign
-  const best = {};
-  for (const ms of RC_WINDOWS) {
-    const win = rcBuf.filter((x) => now - x.t <= ms).map((x) => x.f);
-    if (win.length < 8 || takeQuality(win).pct < 40) continue;
-    for (const [k, v] of classifyTake(win, rcTpl)) if (best[k] === undefined || v < best[k]) best[k] = v;
-  }
-  const rank = Object.entries(best).sort((a, b) => a[1] - b[1]);
-  if (!rank.length) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
+  if (takeQuality(rcBuf).pct < 40) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
+  const rank = classifyTake(rcBuf, rcTpl);
+  if (!rank.length) return;
   const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
   const margin = (d2 - d1) / d2;
   const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
   if (!(d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN)) { rcCand = ""; rcCandN = 0; rcShow(null, conf, "Not sure. Try the sign again."); return; }
   rcShow(label, conf, "Hold it\u2026");
   if (label === rcCand) rcCandN++; else { rcCand = label; rcCandN = 1; }
-  // one strong hit is enough; weaker hits need two in a row
-  if ((rcCandN >= 2 || conf >= 80) && (label !== rcLast || rcArmed)) rcCommit(label, conf);
+  if (rcCandN >= 2 && (label !== rcLast || rcArmed)) rcCommit(label, conf);
 }
 function rcCommit(label, conf) {
   rcLast = label; rcArmed = false; rcBuf = []; rcCand = ""; rcCandN = 0;
@@ -1471,7 +1425,6 @@ function rcCommit(label, conf) {
   const h = $("rcHist"); h.textContent = "";
   rcHist.forEach((w) => { const e = document.createElement("span"); e.textContent = w; h.appendChild(e); });
   rcShow(label, conf, "Got it.");
-  if (!ch.on) sentAdd(label);
   if (ch.on) {
     if (label === ch.target) chHit();
     else rcShow(label, conf, "That was " + label + ". Looking for " + ch.target + ".");
@@ -1544,95 +1497,6 @@ function placeStage(name) {
   if (cam === "ready") video.play().catch(() => {});
 }
 
-/* ---------- Sentence: words -> English -> speech ---------- */
-const SENT_KEY = "sign-sentence-v1";
-let sent = loadJSON(SENT_KEY, null);
-if (!sent || !Array.isArray(sent.words)) sent = { words: [], spoken: 0 };
-sent.spoken = sent.spoken | 0;
-const SN_GREET = { HELLO: "Hello", HI: "Hi", HEY: "Hey", BYE: "Goodbye", GOODBYE: "Goodbye" };
-const SN_WH = ["WHAT", "WHERE", "WHO", "WHY", "HOW", "WHEN"];
-const SN_ADJ = "HAPPY|SAD|TIRED|HUNGRY|THIRSTY|FINE|GOOD|OK|OKAY|SICK|LOST|READY|COLD|HOT|BUSY|SORRY";
-function glossToEnglish(words) {
-  const t = words.map((w) => String(w).trim().toUpperCase()).filter(Boolean);
-  if (!t.length) return "";
-  let greet = "";
-  if (SN_GREET[t[0]]) greet = SN_GREET[t.shift()];
-  if (!t.length) return greet + "!";
-  let q = false;
-  if (t.length > 1 && SN_WH.includes(t[t.length - 1])) { t.unshift(t.pop()); q = true; }
-  else if (SN_WH.includes(t[0])) q = true;
-  let x = t.join(" ");
-  const rules = [
-    [/^WHAT YOU NAME$/, "what is your name"],
-    [/\b(?:ME|I) NAME\b/g, "my name is"],
-    [new RegExp("\\bME (" + SN_ADJ + ")\\b", "g"), "I am $1"],
-    [new RegExp("\\bYOU (" + SN_ADJ + ")\\b", "g"), "you are $1"],
-    [/\bTHANKS?(?: YOU)?\b/g, "thank you"],
-    [/\bME\b/g, "I"],
-  ];
-  for (const [re, to] of rules) x = x.replace(re, to);
-  x = x.toLowerCase().replace(/\bi\b/g, "I");
-  x = x.replace(/^(what|where|why|how|when) (you|I) /, "$1 do $2 ");
-  x = x.replace(/(my name is )(\w+)/, (m, a, b) => a + b[0].toUpperCase() + b.slice(1));
-  x = greet ? greet + ", " + x : x.charAt(0).toUpperCase() + x.slice(1);
-  return x + (q ? "?" : ".");
-}
-const sentSave = () => saveJSON(SENT_KEY, sent);
-function sentAdd(w) { sent.words.push(String(w)); if (sent.words.length > 30) sent.words.shift(); sentSave(); renderSentence(); }
-let snSpeaking = false;
-function renderSentence() {
-  const text = glossToEnglish(sent.words), box = $("snText");
-  box.textContent = text || "Sign in Recognize or tap words below.";
-  box.classList.toggle("empty", !text);
-  $("snLast").textContent = sent.words.length ? sent.words[sent.words.length - 1] : "--";
-  $("snCount").textContent = String(sent.words.length);
-  $("snSpoken").textContent = String(sent.spoken);
-  $("snEmpty").hidden = sent.words.length > 0;
-  $("snSpeak").disabled = !text;
-  $("snCopy").disabled = !text;
-  $("snUndo").disabled = !sent.words.length;
-  $("snClear").disabled = !sent.words.length;
-  $("snSpeak").textContent = snSpeaking ? "Stop" : "Speak";
-  const wl = $("snWords"); wl.textContent = "";
-  sent.words.forEach((w, i) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
-    b.setAttribute("aria-label", "Remove " + w);
-    const a = document.createElement("span"); a.className = "chip-name"; a.textContent = w;
-    const c = document.createElement("span"); c.className = "chip-n"; c.textContent = "\u00d7";
-    b.append(a, c);
-    b.addEventListener("click", () => { sent.words.splice(i, 1); sentSave(); renderSentence(); });
-    wl.appendChild(b);
-  });
-  const pk = $("snPick"); pk.textContent = "";
-  signs.forEach((n) => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
-    const a = document.createElement("span"); a.className = "chip-name"; a.textContent = n;
-    b.appendChild(a);
-    b.addEventListener("click", () => sentAdd(n));
-    pk.appendChild(b);
-  });
-}
-function snStopSpeech() { if ("speechSynthesis" in window) speechSynthesis.cancel(); snSpeaking = false; }
-$("snSpeak").addEventListener("click", () => {
-  if (!("speechSynthesis" in window)) { $("snVoice").textContent = "Speech is not supported in this browser."; return; }
-  if (snSpeaking) { snStopSpeech(); renderSentence(); return; }
-  const text = glossToEnglish(sent.words); if (!text) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = parseFloat($("snRate").value) || 1; u.lang = "en-US";
-  const done = () => { snSpeaking = false; renderSentence(); };
-  u.onend = done; u.onerror = done;
-  snSpeaking = true; speechSynthesis.cancel(); speechSynthesis.speak(u);
-  sent.spoken++; sentSave(); game.xp += 5; saveJSON(GAME_KEY, game); renderHud();
-  renderSentence();
-});
-$("snCopy").addEventListener("click", async () => {
-  const text = glossToEnglish(sent.words), b = $("snCopy");
-  try { await navigator.clipboard.writeText(text); b.textContent = "Copied"; } catch (e) { b.textContent = "Can't copy here"; }
-  setTimeout(() => { b.textContent = "Copy"; }, 1400);
-});
-$("snUndo").addEventListener("click", () => { sent.words.pop(); sentSave(); renderSentence(); });
-$("snClear").addEventListener("click", () => { sent.words = []; sentSave(); snStopSpeech(); renderSentence(); });
-
 /* ---------- tabs (with a page turn) ---------- */
 const TAB_ORDER = ["capture", "train", "recognize", "sentence"];
 const TAB_NAMES = { capture: "01 / Capture", train: "02 / Train", recognize: "03 / Recognize", sentence: "04 / Sentence" };
@@ -1648,8 +1512,6 @@ function switchTab(name) {
   pageNo.textContent = TAB_NAMES[name];
   if (ch.on && name !== "recognize") chEnd();
   placeStage(name);
-  if (name !== "sentence" && snSpeaking) { snStopSpeech(); renderSentence(); }
-  if (name === "sentence") renderSentence();
   if (name === "train") renderTrain();
   if (name === "recognize") { rcLoad(); renderRecognize(); }
   const next = $("screen-" + name);
@@ -1676,7 +1538,6 @@ loop();
 renderHud();
 renderTrain();
 renderRecognize();
-renderSentence();
 initGL();
 </script>
 </body>
