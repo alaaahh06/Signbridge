@@ -162,6 +162,14 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .tr-row .lamps-10{grid-template-columns:repeat(10,10px);gap:5px}
 .tr-row .lamps-10 .cell{background:#26262a}
 .tr-row .lamps-10 .cell.on{background:#fff}
+.rc-host{margin-top:8px}
+.rc-hud .hud-item:first-child b{font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-mode .status{display:none}
+.rc-word{font:700 64px/1 var(--dot);min-height:64px;margin:2px 0 14px;overflow-wrap:anywhere}
+.rc-target{font:700 56px/1 var(--dot);margin:2px 0 16px;overflow-wrap:anywhere}
+.rc-hist{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.rc-hist span{padding:7px 12px;border:1px solid #2e2e32;border-radius:999px;font:700 15px/1 var(--dot)}
+.rc-hist span:first-child{background:#fff;color:#000;border-color:#fff}
 @media (min-width:700px){
   :root{--stage-h:52vh}
   .page{max-width:920px;padding-left:28px;padding-right:28px}
@@ -323,10 +331,27 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
     </section>
 
     <section class="screen" id="screen-recognize" aria-label="Recognize">
-      <div class="card placeholder">
-        <span class="label">Coming in a later step</span>
-        <h2>Recognize</h2>
-        <p>Here the webcam will read your signs live and show each word with a confidence score.</p>
+      <div class="hud train-hud rc-hud">
+        <div class="hud-item"><span class="label">Heard</span><b id="rcHudWord">--</b></div>
+        <div class="hud-item"><span class="label">Match</span><b id="rcHudConf">--</b></div>
+        <div class="hud-item"><span class="label">Best</span><b id="rcHudBest">0</b></div>
+      </div>
+      <div class="rc-host" id="rcHost"></div>
+      <div class="block">
+        <h2><span class="num">03</span> Reading</h2>
+        <div class="rc-word" id="rcWord">--</div>
+        <div class="lamps lamps-10" id="rcConf" aria-hidden="true"></div>
+        <p class="note" id="rcSub"></p>
+        <div class="rc-hist" id="rcHist"></div>
+        <div class="btn-row tr-btns"><button class="btn btn-big" id="rcGo" type="button" hidden>Go to Train</button></div>
+      </div>
+      <div class="block">
+        <h2><span class="num">&middot;</span> Challenge</h2>
+        <div class="rc-target" id="rcTarget">--</div>
+        <div class="xpbar tr-bar" aria-hidden="true"><i id="rcBar"></i></div>
+        <div class="prog-line"><span class="mono" id="rcTime">60 s round</span><span class="mono" id="rcScore">Score 0</span></div>
+        <div class="btn-row"><button class="btn btn-sign btn-big" id="rcStart" type="button">Start challenge</button><button class="btn btn-big" id="rcSkip" type="button" disabled>Skip</button></div>
+        <p class="hint">Sign the word shown. Each correct sign scores 100, up to 50 more if you are fast.</p>
       </div>
     </section>
 
@@ -724,7 +749,8 @@ function draw(pose, left, right) {
 function loop() {
   requestAnimationFrame(loop);
   viewerTick(performance.now());
-  if (cam !== "ready" || currentTab !== "capture") return;
+  rcTick(performance.now());
+  if (cam !== "ready" || (currentTab !== "capture" && currentTab !== "recognize")) return;
   if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
   lastVideoTime = video.currentTime;
   let ts = performance.now();
@@ -749,6 +775,7 @@ function handleResult(res) {
   live.pose = !!pose;
   live.hands = (left ? 1 : 0) + (right ? 1 : 0);
   draw(pose, left, right);
+  if (currentTab === "recognize") rcFeed(pose, left, right);
 
   if (recState === "recording") {
     const f = buildFrame(pose, left, right);
@@ -798,7 +825,7 @@ function beginRecording() {
 const GOAL = 10, GAME_KEY = "sign-game-v1";
 let game = loadJSON(GAME_KEY, null);
 if (!game || typeof game !== "object") game = {};
-game = { streak: game.streak | 0, best: game.best | 0, lastDay: game.lastDay || "", xp: game.xp | 0, unlocked: game.unlocked || {} };
+game = { streak: game.streak | 0, best: game.best | 0, lastDay: game.lastDay || "", xp: game.xp | 0, unlocked: game.unlocked || {}, hi: game.hi | 0 };
 const dayKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 function liveStreak() {
   const now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
@@ -1298,16 +1325,20 @@ async function runTrain() {
   signs.forEach((n) => { per[n] = { total: 0, ok: 0, conf: {}, takes: (dataset[n] || []).length }; });
   const queries = items.filter((q) => per[q.label].takes >= MIN_TAKES_TO_TEST);
   let done = 0;
+  const sameD = [];
   for (const q of queries) {
-    let best = Infinity, bl = null;
-    for (const r of items) { if (r === q) continue; const d = dtw(q.f, r.f); if (d < best) { best = d; bl = r.label; } }
+    let best = Infinity, bl = null, bestSame = Infinity;
+    for (const r of items) { if (r === q) continue; const d = dtw(q.f, r.f); if (d < best) { best = d; bl = r.label; } if (r.label === q.label && d < bestSame) bestSame = d; }
+    if (isFinite(bestSame)) sameD.push(bestSame);
     const row = per[q.label]; row.total++;
     if (bl === q.label) row.ok++; else row.conf[bl] = (row.conf[bl] || 0) + 1;
     done++;
     if (done % 2 === 0) { $("trBar").style.width = Math.round((done / queries.length) * 100) + "%"; $("trMsg").textContent = "Testing take " + done + " of " + queries.length + "\u2026"; await new Promise((r) => setTimeout(r, 0)); }
   }
   const tot = queries.length, ok = Object.values(per).reduce((a, r) => a + r.ok, 0);
-  model = { at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: items.length, per };
+  sameD.sort((a, b) => a - b);
+  const thr = sameD.length ? sameD[Math.min(sameD.length - 1, Math.floor(sameD.length * 0.9))] * 1.3 : 0;
+  model = { at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: items.length, per, thr };
   saveJSON(MODEL_KEY, model);
   training = false; $("trBtn").disabled = false;
   $("trBar").style.width = "100%";
@@ -1353,6 +1384,119 @@ function renderTrain() {
 $("trBtn").addEventListener("click", runTrain);
 $("trGo").addEventListener("click", () => switchTab("capture"));
 
+/* ---------- Recognize: live reading + challenge ---------- */
+const RC_EVERY = 350, RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
+let rcBuf = [], rcTpl = [], rcLastEval = 0, rcCand = "", rcCandN = 0, rcLast = "", rcArmed = true, rcHist = [], rcUi = 0;
+const ch = { on: false, target: "", end: 0, shown: 0, score: 0 };
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const rcReady = () => !!(model && model.thr);
+for (let i = 0; i < 10; i++) { const c = document.createElement("i"); c.className = "cell"; $("rcConf").appendChild(c); }
+function rcLoad() { rcTpl = buildTemplates(); rcBuf = []; rcCand = ""; rcCandN = 0; rcArmed = true; }
+function rcShow(word, conf, sub) {
+  $("rcWord").textContent = word || "--";
+  $("rcHudWord").textContent = word || "--";
+  $("rcHudConf").textContent = word ? conf + "%" : "--";
+  const filled = Math.round(conf / 10);
+  $("rcConf").querySelectorAll(".cell").forEach((c, i) => c.classList.toggle("on", !!word && i < filled));
+  if (sub != null) $("rcSub").textContent = sub;
+}
+function rcFeed(pose, left, right) {
+  if (!rcReady() || ch.on === undefined) return;
+  const f = buildFrame(pose, left, right);
+  if (!f) { rcBuf = []; rcShow(null, 0, "I can't see your shoulders. Step back a little."); return; }
+  rcBuf.push(f); if (rcBuf.length > FRAMES_PER_SAMPLE) rcBuf.shift();
+  const now = performance.now();
+  if (rcBuf.length < FRAMES_PER_SAMPLE || now - rcLastEval < RC_EVERY) return;
+  rcLastEval = now;
+  if (takeQuality(rcBuf).pct < 40) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
+  const rank = classifyTake(rcBuf, rcTpl);
+  if (!rank.length) return;
+  const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
+  const margin = (d2 - d1) / d2;
+  const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
+  if (!(d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN)) { rcCand = ""; rcCandN = 0; rcShow(null, conf, "Not sure. Try the sign again."); return; }
+  rcShow(label, conf, "Hold it\u2026");
+  if (label === rcCand) rcCandN++; else { rcCand = label; rcCandN = 1; }
+  if (rcCandN >= 2 && (label !== rcLast || rcArmed)) rcCommit(label, conf);
+}
+function rcCommit(label, conf) {
+  rcLast = label; rcArmed = false; rcBuf = []; rcCand = ""; rcCandN = 0;
+  rcHist.unshift(label); rcHist = rcHist.slice(0, 8);
+  const h = $("rcHist"); h.textContent = "";
+  rcHist.forEach((w) => { const e = document.createElement("span"); e.textContent = w; h.appendChild(e); });
+  rcShow(label, conf, "Got it.");
+  if (ch.on) {
+    if (label === ch.target) chHit();
+    else rcShow(label, conf, "That was " + label + ". Looking for " + ch.target + ".");
+  }
+}
+function chPool() { return signs.filter((n) => (dataset[n] || []).length >= MIN_TAKES_TO_TEST); }
+function chNext() {
+  const pool = chPool().filter((n) => n !== ch.target);
+  const list = pool.length ? pool : chPool();
+  ch.target = list[Math.floor(Math.random() * list.length)] || "";
+  ch.shown = performance.now();
+  $("rcTarget").textContent = ch.target || "--";
+}
+function chHit() {
+  const dt = performance.now() - ch.shown;
+  ch.score += 100 + Math.round(clamp01(1 - dt / 5000) * 50);
+  $("rcScore").textContent = "Score " + ch.score;
+  burst(); chNext();
+}
+function chStart() {
+  if (!rcReady() || cam !== "ready") return;
+  ch.on = true; ch.score = 0; ch.target = ""; ch.end = performance.now() + CH_ROUND_MS;
+  rcLoad(); chNext();
+  $("rcScore").textContent = "Score 0";
+  renderRecognize();
+}
+function chEnd() {
+  ch.on = false;
+  const xp = Math.round(ch.score / 20), isBest = ch.score > game.hi;
+  game.xp += xp; if (isBest) game.hi = ch.score;
+  saveJSON(GAME_KEY, game); renderHud();
+  $("rcTarget").textContent = "--";
+  $("rcBar").style.width = "0%";
+  $("rcTime").textContent = "Round over";
+  $("rcSub").textContent = "Score " + ch.score + " \u00b7 +" + xp + " XP" + (isBest && ch.score > 0 ? " \u00b7 new best" : "");
+  renderRecognize();
+}
+function renderRecognize() {
+  const ok = rcReady(), live = cam === "ready";
+  $("rcHudBest").textContent = String(game.hi);
+  $("rcGo").hidden = ok;
+  $("rcStart").textContent = ch.on ? "Stop" : "Start challenge";
+  $("rcStart").disabled = !ch.on && !(ok && live && chPool().length >= 2);
+  $("rcSkip").disabled = !ch.on;
+  if (!ch.on && $("rcTime").textContent !== "Round over") $("rcTime").textContent = "60 s round";
+  if (!ok) $("rcSub").textContent = "Train first. Recognize needs a trained model.";
+  else if (!live && !ch.on) $("rcSub").textContent = "Start the camera to begin.";
+  else if ($("rcSub").textContent === "Start the camera to begin." || $("rcSub").textContent.startsWith("Train first")) $("rcSub").textContent = "Raise your hands and sign.";
+}
+function rcTick(now) {
+  if (currentTab !== "recognize") return;
+  if (now - rcUi > 400) { rcUi = now; renderRecognize(); }
+  if (!ch.on) return;
+  const left = ch.end - now;
+  if (left <= 0) { chEnd(); return; }
+  $("rcBar").style.width = (left / CH_ROUND_MS) * 100 + "%";
+  $("rcTime").textContent = Math.ceil(left / 1000) + " s left";
+}
+$("rcStart").addEventListener("click", () => { if (ch.on) chEnd(); else { $("rcTime").textContent = "60 s round"; chStart(); } });
+$("rcSkip").addEventListener("click", () => { if (ch.on) chNext(); });
+$("rcGo").addEventListener("click", () => switchTab("train"));
+
+/* the camera card moves between Capture and Recognize */
+const stageCard = stage.parentElement, stageAnchor = document.createElement("div");
+stageAnchor.hidden = true; stageCard.before(stageAnchor);
+function placeStage(name) {
+  const inRc = name === "recognize";
+  if (inRc) $("rcHost").appendChild(stageCard); else if (stageCard.parentElement !== stageAnchor.parentElement) stageAnchor.after(stageCard);
+  stage.classList.toggle("rc-mode", inRc);
+  if (cam === "ready") video.play().catch(() => {});
+}
+
 /* ---------- tabs (with a page turn) ---------- */
 const TAB_ORDER = ["capture", "train", "recognize", "sentence"];
 const TAB_NAMES = { capture: "01 / Capture", train: "02 / Train", recognize: "03 / Recognize", sentence: "04 / Sentence" };
@@ -1366,7 +1510,10 @@ function switchTab(name) {
     if (t.dataset.tab === name) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
   });
   pageNo.textContent = TAB_NAMES[name];
+  if (ch.on && name !== "recognize") chEnd();
+  placeStage(name);
   if (name === "train") renderTrain();
+  if (name === "recognize") { rcLoad(); renderRecognize(); }
   const next = $("screen-" + name);
   next.classList.remove("turn-fwd", "turn-back");
   void next.offsetWidth;
@@ -1390,6 +1537,7 @@ renderStatus();
 loop();
 renderHud();
 renderTrain();
+renderRecognize();
 initGL();
 </script>
 </body>
