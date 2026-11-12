@@ -1292,16 +1292,37 @@ async function startCamera() {
 startBtn.addEventListener("click", startCamera);
 
 /* ---------- Train: sequence matching (DTW + nearest neighbour) ---------- */
-const MODEL_KEY = "sign-model-v1", DTW_BAND = 8, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
+const MODEL_KEY = "sign-model-v2", RS_N = 16, DTW_BAND = 4, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
 let model = loadJSON(MODEL_KEY, null), training = false;
+function resampleTake(take, N) {
+  const n = take.length, out = [];
+  for (let i = 0; i < N; i++) out.push(take[Math.round(i * (n - 1) / (N - 1))]);
+  return out;
+}
+/* Speed-independent features: every take is stretched to RS_N frames, and hand shape is
+   measured relative to each wrist so fast and slow signs look the same. */
+function handShape(f, base, o, d) {
+  const wx = f[base], wy = f[base + 1], wz = f[base + 2];
+  if (wx === 0 && wy === 0 && wz === 0) { for (let i = 0; i < 63; i++) d[o + i] = 0; return; }
+  const mx = f[base + 27] - wx, my = f[base + 28] - wy, mz = f[base + 29] - wz;
+  const s = Math.hypot(mx, my, mz) || 0.1;
+  for (let i = 0; i < 21; i++) {
+    d[o + i * 3] = (f[base + i * 3] - wx) / s * 0.6;
+    d[o + i * 3 + 1] = (f[base + i * 3 + 1] - wy) / s * 0.6;
+    d[o + i * 3 + 2] = (f[base + i * 3 + 2] - wz) / s * 0.6;
+  }
+}
 function takeFeatures(take) {
-  const dim = POSE_USE.length * 3 + 126, d = new Float32Array(take.length * dim);
-  take.forEach((f, t) => {
+  const rs = resampleTake(take, RS_N);
+  const dim = POSE_USE.length * 3 + 126 + 126, d = new Float32Array(rs.length * dim);
+  rs.forEach((f, t) => {
     let o = t * dim;
     for (const i of POSE_USE) { d[o++] = f[i * 3]; d[o++] = f[i * 3 + 1]; d[o++] = f[i * 3 + 2]; }
     for (let i = 99; i < 225; i++) d[o++] = f[i];
+    handShape(f, 99, o, d); o += 63;
+    handShape(f, 162, o, d);
   });
-  return { d, n: take.length, dim };
+  return { d, n: rs.length, dim };
 }
 function dtw(a, b) {
   const n = a.n, m = b.n, dim = a.dim, INF = 1e9, w = Math.max(DTW_BAND, Math.abs(n - m));
@@ -1403,7 +1424,7 @@ $("trBtn").addEventListener("click", runTrain);
 $("trGo").addEventListener("click", () => switchTab("capture"));
 
 /* ---------- Recognize: live reading + challenge ---------- */
-const RC_EVERY = 350, RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
+const RC_EVERY = 120, RC_WINDOWS = [500, 800, 1100], RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
 let rcBuf = [], rcTpl = [], rcLastEval = 0, rcCand = "", rcCandN = 0, rcLast = "", rcArmed = true, rcHist = [], rcUi = 0;
 const ch = { on: false, target: "", end: 0, shown: 0, score: 0 };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -1420,22 +1441,29 @@ function rcShow(word, conf, sub) {
 }
 function rcFeed(pose, left, right) {
   if (!rcReady() || ch.on === undefined) return;
-  const f = buildFrame(pose, left, right);
+  const f = buildFrame(pose, left, right), now = performance.now();
   if (!f) { rcBuf = []; rcShow(null, 0, "I can't see your shoulders. Step back a little."); return; }
-  rcBuf.push(f); if (rcBuf.length > FRAMES_PER_SAMPLE) rcBuf.shift();
-  const now = performance.now();
-  if (rcBuf.length < FRAMES_PER_SAMPLE || now - rcLastEval < RC_EVERY) return;
+  rcBuf.push({ f, t: now }); while (rcBuf.length && now - rcBuf[0].t > 1300) rcBuf.shift();
+  if (now - rcLastEval < RC_EVERY) return;
+  if (rcBuf.length < 8) return;
   rcLastEval = now;
-  if (takeQuality(rcBuf).pct < 40) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
-  const rank = classifyTake(rcBuf, rcTpl);
-  if (!rank.length) return;
+  // try several window lengths so fast and slow signs both fit; keep the best match per sign
+  const best = {};
+  for (const ms of RC_WINDOWS) {
+    const win = rcBuf.filter((x) => now - x.t <= ms).map((x) => x.f);
+    if (win.length < 8 || takeQuality(win).pct < 40) continue;
+    for (const [k, v] of classifyTake(win, rcTpl)) if (best[k] === undefined || v < best[k]) best[k] = v;
+  }
+  const rank = Object.entries(best).sort((a, b) => a[1] - b[1]);
+  if (!rank.length) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
   const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
   const margin = (d2 - d1) / d2;
   const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
   if (!(d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN)) { rcCand = ""; rcCandN = 0; rcShow(null, conf, "Not sure. Try the sign again."); return; }
   rcShow(label, conf, "Hold it\u2026");
   if (label === rcCand) rcCandN++; else { rcCand = label; rcCandN = 1; }
-  if (rcCandN >= 2 && (label !== rcLast || rcArmed)) rcCommit(label, conf);
+  // one strong hit is enough; weaker hits need two in a row
+  if ((rcCandN >= 2 || conf >= 80) && (label !== rcLast || rcArmed)) rcCommit(label, conf);
 }
 function rcCommit(label, conf) {
   rcLast = label; rcArmed = false; rcBuf = []; rcCand = ""; rcCandN = 0;
