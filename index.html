@@ -8,13 +8,13 @@
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700&family=Space+Grotesk:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;
   --bg:#000;--surface:#0f0f10;--raised:#1a1a1c;--line:#232326;--text:#f4f4f2;--muted:#808086;
   --red:#d71921;--hot:#ff2d2d;--accent:#f4f4f2;--green:#f4f4f2;--blue:#f4f4f2;
-  --dot:"Doto","Space Mono",ui-monospace,monospace;
-  --font-head:"Doto","Space Mono",ui-monospace,monospace;
+  --dot:"Space Grotesk",system-ui,sans-serif;--display:"Climate Crisis","Space Grotesk",system-ui,sans-serif;
+  --font-head:"Space Grotesk",system-ui,sans-serif;
   --font-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
   --font-mono:"Space Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --r:28px;--stage-h:40vh}
@@ -26,7 +26,7 @@ button,input,summary{font:inherit;color:inherit}
 .page{max-width:520px;margin:0 auto;padding:0 14px calc(104px + env(safe-area-inset-bottom));overflow-x:clip}
 .top{display:flex;align-items:flex-end;justify-content:space-between;padding:26px 6px 14px}
 .board{display:flex;flex-direction:column;gap:6px}
-h1{margin:0;font:700 40px/.9 var(--dot);letter-spacing:.01em}
+h1{margin:0;font:400 30px/1 var(--display);letter-spacing:0}
 h1 span{color:var(--red)}
 .label{font:400 11px/1.2 var(--font-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .tag{margin:0}.stop{text-align:right}.clock{display:none}.hazard{display:none}
@@ -80,7 +80,7 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .lamps-10 .cell.on{background:var(--red)}
 .takes-board{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .flaps{display:flex;gap:4px}
-.flap{display:grid;place-items:center;min-width:40px;height:64px;padding:0 6px;border-radius:16px;background:#000;font:700 44px/1 var(--dot);font-variant-numeric:tabular-nums}
+.flap{display:grid;place-items:center;min-width:44px;height:64px;padding:0 6px;border-radius:16px;background:#000;font:400 34px/1 var(--display);font-variant-numeric:tabular-nums}
 .flap.flip{animation:fade .3s}
 .goal{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex:1;min-width:140px}
 .btn{min-height:52px;padding:0 22px;border:1px solid #2e2e32;border-radius:999px;background:transparent;color:var(--text);font:500 14px/1.1 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;touch-action:manipulation;transition:background .15s,transform .08s}
@@ -155,6 +155,7 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .tr-btns{grid-template-columns:1fr}
 .tr-row{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;padding:16px 0;border-top:1px solid var(--line)}
 .tr-row:first-child{border-top:0;padding-top:0}
+.tr-name,.rc-word,.rc-target,.sn-text,.stage-msg h3,.hud-item b,.chip-name{letter-spacing:-.02em}
 .tr-name{font:700 24px/1 var(--dot)}
 .tr-acc{font:700 24px/1 var(--dot);font-variant-numeric:tabular-nums}
 .tr-sub{grid-column:1/-1;font:400 12px/1.4 var(--font-mono);color:var(--muted)}
@@ -1292,7 +1293,7 @@ async function startCamera() {
 startBtn.addEventListener("click", startCamera);
 
 /* ---------- Train: sequence matching (DTW + nearest neighbour) ---------- */
-const MODEL_KEY = "sign-model-v1", DTW_BAND = 8, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
+const MODEL_KEY = "sign-model-v1", DTW_BAND = 12, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
 let model = loadJSON(MODEL_KEY, null), training = false;
 function takeFeatures(take) {
   const dim = POSE_USE.length * 3 + 126, d = new Float32Array(take.length * dim);
@@ -1403,7 +1404,7 @@ $("trBtn").addEventListener("click", runTrain);
 $("trGo").addEventListener("click", () => switchTab("capture"));
 
 /* ---------- Recognize: live reading + challenge ---------- */
-const RC_EVERY = 350, RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
+const RC_EVERY = 150, RC_BUF = 60, RC_LENS = [14, 20, 30, 42], RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
 let rcBuf = [], rcTpl = [], rcLastEval = 0, rcCand = "", rcCandN = 0, rcLast = "", rcArmed = true, rcHist = [], rcUi = 0;
 const ch = { on: false, target: "", end: 0, shown: 0, score: 0 };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -1419,23 +1420,35 @@ function rcShow(word, conf, sub) {
   if (sub != null) $("rcSub").textContent = sub;
 }
 function rcFeed(pose, left, right) {
-  if (!rcReady() || ch.on === undefined) return;
+  if (!rcReady()) return;
   const f = buildFrame(pose, left, right);
   if (!f) { rcBuf = []; rcShow(null, 0, "I can't see your shoulders. Step back a little."); return; }
-  rcBuf.push(f); if (rcBuf.length > FRAMES_PER_SAMPLE) rcBuf.shift();
+  rcBuf.push(f); if (rcBuf.length > RC_BUF) rcBuf.shift();
   const now = performance.now();
-  if (rcBuf.length < FRAMES_PER_SAMPLE || now - rcLastEval < RC_EVERY) return;
+  if (rcBuf.length < RC_LENS[0] || now - rcLastEval < RC_EVERY) return;
   rcLastEval = now;
-  if (takeQuality(rcBuf).pct < 40) { rcArmed = true; rcCand = ""; rcCandN = 0; rcShow(null, 0, "Raise your hands and sign."); return; }
-  const rank = classifyTake(rcBuf, rcTpl);
-  if (!rank.length) return;
-  const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
-  const margin = (d2 - d1) / d2;
-  const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
-  if (!(d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN)) { rcCand = ""; rcCandN = 0; rcShow(null, conf, "Not sure. Try the sign again."); return; }
-  rcShow(label, conf, "Hold it\u2026");
-  if (label === rcCand) rcCandN++; else { rcCand = label; rcCandN = 1; }
-  if (rcCandN >= 2 && (label !== rcLast || rcArmed)) rcCommit(label, conf);
+  /* try several window lengths so fast and slow signing both match */
+  let best = null;
+  for (const L of RC_LENS) {
+    if (rcBuf.length < L) break;
+    const w = rcBuf.slice(-L);
+    if (takeQuality(w).pct < 40) continue;
+    const rank = classifyTake(w, rcTpl);
+    if (!rank.length) continue;
+    const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
+    const margin = (d2 - d1) / d2;
+    const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
+    if (d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN && (!best || conf > best.conf)) best = { label, conf };
+  }
+  if (!best) {
+    rcCand = ""; rcCandN = 0;
+    if (takeQuality(rcBuf.slice(-RC_LENS[0])).pct < 40) { rcArmed = true; rcShow(null, 0, "Raise your hands and sign."); }
+    else rcShow(null, 0, "Not sure. Try the sign again.");
+    return;
+  }
+  rcShow(best.label, best.conf, "Hold it\u2026");
+  if (best.label === rcCand) rcCandN++; else { rcCand = best.label; rcCandN = 1; }
+  if (rcCandN >= 2 && (best.label !== rcLast || rcArmed)) rcCommit(best.label, best.conf);
 }
 function rcCommit(label, conf) {
   rcLast = label; rcArmed = false; rcBuf = []; rcCand = ""; rcCandN = 0;
