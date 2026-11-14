@@ -12,7 +12,7 @@
 <style>
 :root{color-scheme:dark;
   --bg:#000;--surface:#0f0f10;--raised:#1a1a1c;--line:#232326;--text:#f4f4f2;--muted:#808086;
-  --red:#d71921;--hot:#ff2d2d;--accent:#f4f4f2;--green:#f4f4f2;--blue:#f4f4f2;
+  --lime:#c8f560;--red:#ff3b30;--hot:#ff3b30;--accent:#f4f4f2;--green:#f4f4f2;--blue:#f4f4f2;
   --dot:"Space Grotesk",system-ui,sans-serif;--display:"Climate Crisis","Space Grotesk",system-ui,sans-serif;
   --font-head:"Space Grotesk",system-ui,sans-serif;
   --font-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -27,7 +27,7 @@ button,input,summary{font:inherit;color:inherit}
 .top{display:flex;align-items:flex-end;justify-content:space-between;padding:26px 6px 14px}
 .board{display:flex;flex-direction:column;gap:6px}
 h1{margin:0;font:400 30px/1 var(--display);letter-spacing:0}
-h1 span{color:var(--red)}
+h1 span{color:var(--lime)}
 .label{font:400 11px/1.2 var(--font-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .tag{margin:0}.stop{text-align:right}.clock{display:none}.hazard{display:none}
 .screen{display:none}.screen.active{display:block;animation:fade .25s ease}
@@ -35,16 +35,16 @@ h1 span{color:var(--red)}
 .hud{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;padding:0}
 .hud-item{background:var(--surface);border-radius:24px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-height:84px;justify-content:space-between}
 .hud-item b{font:700 34px/1 var(--dot);font-variant-numeric:tabular-nums}
-.hud-lv .label b{font:inherit;color:var(--red)}
+.hud-lv .label b{font:inherit;color:var(--lime)}
 .xpbar{height:8px;background:repeating-linear-gradient(90deg,#2a2a2d 0 4px,transparent 4px 8px);overflow:hidden}
-.xpbar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--red) 0 4px,transparent 4px 8px);transition:width .5s steps(12)}
+.xpbar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--lime) 0 4px,transparent 4px 8px);transition:width .5s steps(12)}
 .cap-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px;grid-template-areas:"pick" "rec" "view" "takes"}
 .cap-grid>*{min-width:0}.cap-grid .block{margin-top:0}
 .b-pick{grid-area:pick}.b-rec{grid-area:rec}.b-view{grid-area:view}.b-takes{grid-area:takes}
 .block{margin-top:8px;background:var(--surface);border-radius:var(--r);padding:18px}
 .b-rec{background:transparent;padding:0}
 h2{font:400 12px/1.2 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin:0 0 14px;display:flex;align-items:center;gap:10px}
-h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red)}
+h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--lime)}
 .num{color:var(--muted);font:inherit}
 .card{background:var(--surface);border-radius:var(--r);padding:10px}
 .stage{--ar:1.3333;position:relative;width:min(100%,calc(var(--stage-h) * var(--ar)));aspect-ratio:var(--ar);container-type:inline-size;margin:0 auto;background:#000;border-radius:22px;overflow:hidden}
@@ -77,7 +77,7 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .lamps{display:grid;gap:3px}.lamps-30{grid-template-columns:repeat(30,1fr)}.lamps-10{grid-template-columns:repeat(10,14px);gap:6px}
 .cell{display:block;aspect-ratio:1;height:auto;border-radius:50%;background:#26262a}
 .cell.on{background:#fff}
-.lamps-10 .cell.on{background:var(--red)}
+.lamps-10 .cell.on{background:var(--lime)}
 .takes-board{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .flaps{display:flex;gap:4px}
 .flap{display:grid;place-items:center;min-width:44px;height:64px;padding:0 6px;border-radius:16px;background:#000;font:400 34px/1 var(--display);font-variant-numeric:tabular-nums}
@@ -96,8 +96,8 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .btn-wide{width:100%;margin-top:10px}
 .btn-clear{color:var(--hot);border-color:transparent}
-.btn-clear:hover:not(:disabled){background:rgba(255,45,45,.08)}
-.btn:focus-visible,.chip:focus-visible,input:focus-visible,summary:focus-visible,.tab:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.btn-clear:hover:not(:disabled){background:rgba(255,59,48,.1)}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible,summary:focus-visible,.tab:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;border:1px solid #2e2e32;border-radius:999px;background:transparent;cursor:pointer;touch-action:manipulation;transition:background .15s}
 .chip:hover:not(:disabled){background:var(--raised)}
@@ -105,8 +105,8 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .chip-n{font:400 11px/1 var(--font-mono);color:var(--muted)}
 .chip.on{background:#fff;border-color:#fff;color:#000}
 .chip.on .chip-n{color:#000;opacity:.6}
-.chip.done .chip-n{color:var(--red);font-size:13px}
-.chip.on.done .chip-n{color:var(--red);opacity:1}
+.chip.done .chip-n{color:var(--lime);font-size:13px}
+.chip.on.done .chip-n{color:#000;opacity:1;font-weight:700}
 .chip:disabled{opacity:.4;cursor:not-allowed}
 .addsign summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;min-height:40px;margin-top:10px;color:var(--muted);font:400 12px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
 .addsign summary:hover{color:var(--text)}
@@ -127,7 +127,7 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .viewer-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;pointer-events:none}
 .viewer-empty .note{margin:0}
 .viewer-bar{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;margin-top:14px}
-.viewer-bar input[type=range]{width:100%;min-height:40px;accent-color:var(--red)}
+.viewer-bar input[type=range]{width:100%;min-height:40px;accent-color:var(--lime)}
 .viewer-bar .mono{grid-column:1/-1;overflow-wrap:anywhere}
 .placeholder{margin-top:8px;padding:28px 22px}
 .placeholder h2{font:700 38px/1 var(--dot);letter-spacing:0;text-transform:none;display:block;margin:12px 0 10px}
@@ -140,8 +140,8 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--re
 .track{display:none}
 .tab{position:relative;min-height:52px;padding:6px 0;border:0;border-radius:999px;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:400 11px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
 .dot{font:400 10px/1 var(--font-mono);opacity:.6}
-.tab[aria-current="page"]{background:#fff;color:#000}
-.tab[aria-current="page"] .dot{opacity:1;color:var(--red);font-weight:700}
+.tab[aria-current="page"]{background:var(--lime);color:#000}
+.tab[aria-current="page"] .dot{opacity:1;color:#000;font-weight:700}
 .rail-foot{display:none}
 .modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal .card{max-width:400px;width:100%;padding:26px;background:var(--surface)}
@@ -416,7 +416,7 @@ const DATA_KEY = "sign-dataset-v1";
 const LIST_KEY = "sign-list-v1";
 const DEFAULT_SIGNS = ["HELLO", "THANKS", "YES"];
 const LOST_BODY_MS = 3000;
-const INK = "#0a0a0b", RED = "#ff2d2d", BLUE = "#ffffff", PAPER = "#ededee", VINK = "#a8a8b0";
+const INK = "#0a0a0b", RED = "#c8f560", BLUE = "#ffffff", PAPER = "#ededee", VINK = "#a8a8b0";
 
 const POSE_LINES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]];
 const HAND_LINES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
@@ -879,7 +879,7 @@ function awardTake(sign, n, q) {
   return { xp, unlocked };
 }
 function burst() {
-  const cols = ["#ffffff", "#d71921", "#ffffff", "#808086"];
+  const cols = ["#ffffff", "#c8f560", "#ffffff", "#808086"];
   for (let i = 0; i < 18; i++) {
     const e = document.createElement("i");
     e.className = "burst";
@@ -1149,7 +1149,7 @@ async function initGL() {
     const group = new THREE.Group(); scene.add(group);
     const cyl = new THREE.CylinderGeometry(1, 1, 1, 10), sph = new THREE.SphereGeometry(1, 14, 10);
     const mat = (c) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.55, roughness: 0.4 });
-    const mBody = mat(0x8a8a90), mL = mat(0xd71921), mR = mat(0xffffff), mHead = mat(0xededee);
+    const mBody = mat(0x8a8a90), mL = mat(0xc8f560), mR = mat(0xffffff), mHead = mat(0xededee);
     const segs = [], joints = [];
     const addSeg = (g1, i1, g2, i2, m, r) => { const mesh = new THREE.Mesh(cyl, m); group.add(mesh); segs.push({ g1, i1, g2, i2, mesh, r }); };
     const addJoint = (g, i, m, r) => { const mesh = new THREE.Mesh(sph, m); group.add(mesh); joints.push({ g, i, mesh, r }); };
@@ -1160,7 +1160,7 @@ async function initGL() {
     addJoint("p", 0, mHead, 0.13);
     for (let i = 0; i < 21; i++) { addJoint("l", i, mL, 0.026); addJoint("r", i, mR, 0.026); }
     const line = (c) => { const l = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.5 })); group.add(l); return l; };
-    const trailL = line(0xd71921), trailR = line(0xffffff);
+    const trailL = line(0xc8f560), trailR = line(0xffffff);
     const ringPts = []; for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; ringPts.push(new THREE.Vector3(Math.cos(a) * 1.52, 0, Math.sin(a) * 1.52)); }
     const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14 }));
     group.add(ring);
@@ -1295,14 +1295,33 @@ startBtn.addEventListener("click", startCamera);
 /* ---------- Train: sequence matching (DTW + nearest neighbour) ---------- */
 const MODEL_KEY = "sign-model-v1", DTW_BAND = 12, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
 let model = loadJSON(MODEL_KEY, null), training = false;
+if (model && model.v !== 2) model = null; /* older models used different features: train again */
+/* Features per frame: upper-body pose, hand landmarks (11 per hand), hand SHAPE (relative to the wrist,
+   scaled by hand size) and wrist MOTION direction (speed-independent). */
+const HAND_IDX = [0, 2, 4, 5, 8, 9, 12, 13, 16, 17, 20], SHAPE_W = 0.35, MOTION_W = 0.8;
 function takeFeatures(take) {
-  const dim = POSE_USE.length * 3 + 126, d = new Float32Array(take.length * dim);
+  const n = take.length, dim = POSE_USE.length * 3 + HAND_IDX.length * 6 + (HAND_IDX.length - 1) * 6 + 6, d = new Float32Array(n * dim);
+  const present = (f, base) => { for (let i = 0; i < 63; i++) if (f[base + i] !== 0) return true; return false; };
+  const wrist = (f, base) => (present(f, base) ? [f[base], f[base + 1], f[base + 2]] : null);
   take.forEach((f, t) => {
     let o = t * dim;
     for (const i of POSE_USE) { d[o++] = f[i * 3]; d[o++] = f[i * 3 + 1]; d[o++] = f[i * 3 + 2]; }
-    for (let i = 99; i < 225; i++) d[o++] = f[i];
+    for (const base of [99, 162]) for (const i of HAND_IDX) { d[o++] = f[base + i * 3]; d[o++] = f[base + i * 3 + 1]; d[o++] = f[base + i * 3 + 2]; }
+    for (const base of [99, 162]) {
+      if (!present(f, base)) { o += (HAND_IDX.length - 1) * 3; continue; }
+      const wx = f[base], wy = f[base + 1], wz = f[base + 2];
+      const sc = Math.hypot(f[base + 27] - wx, f[base + 28] - wy, f[base + 29] - wz) || 1;
+      for (const i of HAND_IDX.slice(1)) { d[o++] = ((f[base + i * 3] - wx) / sc) * SHAPE_W; d[o++] = ((f[base + i * 3 + 1] - wy) / sc) * SHAPE_W; d[o++] = ((f[base + i * 3 + 2] - wz) / sc) * SHAPE_W; }
+    }
+    for (const base of [99, 162]) {
+      const cur = wrist(f, base), old = t >= 2 ? wrist(take[t - 2], base) : null;
+      if (cur && old) {
+        const vx = cur[0] - old[0], vy = cur[1] - old[1], vz = cur[2] - old[2], m = Math.hypot(vx, vy, vz) || 1, k = Math.min(1, m * 15) / m * MOTION_W;
+        d[o++] = vx * k; d[o++] = vy * k; d[o++] = vz * k;
+      } else o += 3;
+    }
   });
-  return { d, n: take.length, dim };
+  return { d, n, dim };
 }
 function dtw(a, b) {
   const n = a.n, m = b.n, dim = a.dim, INF = 1e9, w = Math.max(DTW_BAND, Math.abs(n - m));
@@ -1326,10 +1345,21 @@ function buildTemplates() {
   signs.forEach((n) => (dataset[n] || []).forEach((t) => { if (t && t.length >= 10) out.push({ label: n, f: takeFeatures(t) }); }));
   return out;
 }
+const KNN = 3;
+/* score per sign = mean of its K nearest takes (fair to signs with few takes) */
+function scoreByLabel(by) {
+  const out = [];
+  for (const label of Object.keys(by)) {
+    const arr = by[label].sort((x, y) => x - y), k = Math.min(KNN, arr.length);
+    let sum = 0; for (let i = 0; i < k; i++) sum += arr[i];
+    out.push([label, sum / k]);
+  }
+  return out.sort((x, y) => x[1] - y[1]);
+}
 function classifyTake(take, templates) {
-  const q = takeFeatures(take), best = {};
-  for (const r of templates) { const d = dtw(q, r.f); if (best[r.label] === undefined || d < best[r.label]) best[r.label] = d; }
-  return Object.entries(best).sort((a, b) => a[1] - b[1]);
+  const q = takeFeatures(take), by = {};
+  for (const r of templates) (by[r.label] = by[r.label] || []).push(dtw(q, r.f));
+  return scoreByLabel(by);
 }
 const dataSig = () => signs.map((n) => n + ":" + (dataset[n] || []).length).join("|");
 function trainReady() {
@@ -1340,24 +1370,32 @@ async function runTrain() {
   if (training) return;
   if (!trainReady()) { renderTrain(); return; }
   training = true; $("trBtn").disabled = true;
-  const items = buildTemplates(), per = {};
+  const items = buildTemplates(), N = items.length, per = {};
   signs.forEach((n) => { per[n] = { total: 0, ok: 0, conf: {}, takes: (dataset[n] || []).length }; });
-  const queries = items.filter((q) => per[q.label].takes >= MIN_TAKES_TO_TEST);
-  let done = 0;
-  const sameD = [];
-  for (const q of queries) {
-    let best = Infinity, bl = null, bestSame = Infinity;
-    for (const r of items) { if (r === q) continue; const d = dtw(q.f, r.f); if (d < best) { best = d; bl = r.label; } if (r.label === q.label && d < bestSame) bestSame = d; }
-    if (isFinite(bestSame)) sameD.push(bestSame);
-    const row = per[q.label]; row.total++;
-    if (bl === q.label) row.ok++; else row.conf[bl] = (row.conf[bl] || 0) + 1;
-    done++;
-    if (done % 2 === 0) { $("trBar").style.width = Math.round((done / queries.length) * 100) + "%"; $("trMsg").textContent = "Testing take " + done + " of " + queries.length + "\u2026"; await new Promise((r) => setTimeout(r, 0)); }
+  /* distance between every pair of takes, computed once */
+  const D = Array.from({ length: N }, () => new Float32Array(N));
+  const pairs = (N * (N - 1)) / 2; let pd = 0;
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    D[i][j] = D[j][i] = dtw(items[i].f, items[j].f);
+    if (++pd % 40 === 0) { $("trBar").style.width = Math.round((pd / pairs) * 100) + "%"; $("trMsg").textContent = "Comparing takes\u2026 " + Math.round((pd / pairs) * 100) + "%"; await new Promise((r) => setTimeout(r, 0)); }
   }
-  const tot = queries.length, ok = Object.values(per).reduce((a, r) => a + r.ok, 0);
-  sameD.sort((a, b) => a - b);
-  const thr = sameD.length ? sameD[Math.min(sameD.length - 1, Math.floor(sameD.length * 0.9))] * 1.3 : 0;
-  model = { at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: items.length, per, thr };
+  /* leave-one-out: each take is classified by all the others */
+  const own = {};
+  let tot = 0, ok = 0;
+  for (let i = 0; i < N; i++) {
+    const lab = items[i].label;
+    if (per[lab].takes < MIN_TAKES_TO_TEST) continue;
+    const by = {};
+    for (let j = 0; j < N; j++) if (j !== i) (by[items[j].label] = by[items[j].label] || []).push(D[i][j]);
+    const rank = scoreByLabel(by), pred = rank[0][0], mine = rank.find((r) => r[0] === lab);
+    if (mine) (own[lab] = own[lab] || []).push(mine[1]);
+    per[lab].total++; tot++;
+    if (pred === lab) { per[lab].ok++; ok++; } else per[lab].conf[pred] = (per[lab].conf[pred] || 0) + 1;
+  }
+  const p90 = (arr) => { const a2 = arr.slice().sort((x, y) => x - y); return a2.length ? a2[Math.min(a2.length - 1, Math.floor(a2.length * 0.9))] * 1.3 : 0; };
+  const all = Object.values(own).flat(), thr = p90(all), thrBy = {};
+  Object.keys(own).forEach((l) => { thrBy[l] = Math.max(p90(own[l]), thr * 0.7); });
+  model = { v: 2, at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: N, per, thr, thrBy };
   saveJSON(MODEL_KEY, model);
   training = false; $("trBtn").disabled = false;
   $("trBar").style.width = "100%";
@@ -1435,7 +1473,7 @@ function rcFeed(pose, left, right) {
     if (takeQuality(w).pct < 40) continue;
     const rank = classifyTake(w, rcTpl);
     if (!rank.length) continue;
-    const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = model.thr;
+    const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = (model.thrBy && model.thrBy[label]) || model.thr;
     const margin = (d2 - d1) / d2;
     const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
     if (d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN && (!best || conf > best.conf)) best = { label, conf };
