@@ -787,22 +787,28 @@ function loop() {
   if (res) handleResult(res);
 }
 
+let lastFeedAt = 0;
 function handleResult(res) {
   const pose = first(res.poseLandmarks);
   const left = first(res.leftHandLandmarks);
   const right = first(res.rightHandLandmarks);
   live.pose = !!pose;
   live.hands = (left ? 1 : 0) + (right ? 1 : 0);
+  /* track at the camera's full rate, but feed recording and recognition at ~30 fps so takes stay consistent */
+  const nowT = performance.now(), feed = nowT - lastFeedAt >= 28;
+  if (feed) lastFeedAt = nowT;
   draw(pose, left, right);
-  if (currentTab === "recognize") rcFeed(pose, left, right);
+  if (feed && currentTab === "recognize") rcFeed(pose, left, right);
 
   if (recState === "recording") {
     const f = buildFrame(pose, left, right);
     if (f) {
-      frames.push(f);
       lastGoodAt = performance.now();
-      setProgress(frames.length);
-      if (frames.length >= FRAMES_PER_SAMPLE) finishRecording();
+      if (feed) {
+        frames.push(f);
+        setProgress(frames.length);
+        if (frames.length >= FRAMES_PER_SAMPLE) finishRecording();
+      }
     } else if (performance.now() - lastGoodAt > LOST_BODY_MS) {
       abortRecording("bad", "Lost you", "I lost sight of your shoulders. Step back so your upper body stays in view, then try again.");
     }
@@ -1251,7 +1257,7 @@ async function startCamera() {
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 60 } },
       audio: false
     });
   } catch (err) {
