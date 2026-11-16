@@ -38,9 +38,9 @@ h1 span{color:var(--lime)}
 .hud-lv .label b{font:inherit;color:var(--lime)}
 .xpbar{height:8px;background:repeating-linear-gradient(90deg,#2a2a2d 0 4px,transparent 4px 8px);overflow:hidden}
 .xpbar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--lime) 0 4px,transparent 4px 8px);transition:width .5s steps(12)}
-.cap-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px;grid-template-areas:"pick" "rec" "view" "takes"}
+.cap-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px;grid-template-areas:"pick" "rec" "takes"}
 .cap-grid>*{min-width:0}.cap-grid .block{margin-top:0}
-.b-pick{grid-area:pick}.b-rec{grid-area:rec}.b-view{grid-area:view}.b-takes{grid-area:takes}
+.b-pick{grid-area:pick}.b-rec{grid-area:rec}.b-takes{grid-area:takes}
 .block{margin-top:8px;background:var(--surface);border-radius:var(--r);padding:18px}
 .b-rec{background:transparent;padding:0}
 h2{font:400 12px/1.2 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin:0 0 14px;display:flex;align-items:center;gap:10px}
@@ -120,12 +120,6 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
 .mono{font:400 12px/1.2 var(--font-mono);color:var(--muted)}
 .rec-card{margin-top:8px}
 .kbd{display:none}
-.viewer{position:relative;aspect-ratio:4/3;border-radius:22px;overflow:hidden;background:#000;background-image:radial-gradient(circle,#232326 1.2px,transparent 1.6px);background-size:16px 16px;touch-action:pan-y;cursor:grab}
-.viewer:active{cursor:grabbing}
-.viewer canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
-#glCanvas{pointer-events:none}
-.viewer-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;pointer-events:none}
-.viewer-empty .note{margin:0}
 .viewer-bar{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;margin-top:14px}
 .viewer-bar input[type=range]{width:100%;min-height:40px;accent-color:var(--lime)}
 .viewer-bar .mono{grid-column:1/-1;overflow-wrap:anywhere}
@@ -176,7 +170,7 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
 @media (min-width:700px){
   :root{--stage-h:52vh}
   .page{max-width:920px;padding-left:28px;padding-right:28px}
-  .cap-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"pick pick" "rec rec" "view takes";align-items:start}
+  .cap-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"pick pick" "rec rec" "takes takes";align-items:start}
 }
 @media (min-width:1000px){
   .shell{display:grid;grid-template-columns:168px minmax(0,1fr)}
@@ -190,12 +184,11 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
 }
 @media (min-width:1280px){
   :root{--stage-h:60vh}
-  .cap-grid{grid-template-columns:290px minmax(420px,1fr) 330px;grid-template-areas:"pick rec view" "takes rec view"}
-  .viewer{aspect-ratio:1/1}
-}
+  .cap-grid{grid-template-columns:320px minmax(420px,1fr);grid-template-areas:"pick rec" "takes rec"}
+  }
 @media (orientation:landscape) and (max-height:520px) and (max-width:999px){
   :root{--stage-h:66vh}
-  .cap-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-areas:"rec pick" "rec takes" "view view";align-items:start}
+  .cap-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);grid-template-areas:"rec pick" "rec takes";align-items:start}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.stamp.show{opacity:1}}
 </style>
@@ -274,23 +267,6 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
         </div>
         <p class="hint note">Stand back so your head, shoulders and both hands fit in view. A take is about one second.</p>
         <p class="hint mono kbd">Keys: SPACE record or cancel &middot; 1-9 pick a sign</p>
-      </div>
-
-      <div class="block b-view">
-        <h2><span class="num">3</span>Check it in 3D</h2>
-        <div class="card">
-          <div class="viewer" id="viewer">
-            <canvas id="glCanvas" aria-hidden="true"></canvas>
-            <canvas id="viewCanvas" aria-label="3D replay of your last take. Drag sideways to turn it."></canvas>
-            <div class="viewer-empty" id="viewerEmpty"><span class="note">Record a take and it spins here.</span></div>
-          </div>
-          <div class="viewer-bar">
-            <button class="btn btn-small" id="spinBtn" type="button" disabled>Pause</button>
-            <input id="scrub" type="range" min="0" max="29" value="0" aria-label="Scrub through the frames" disabled>
-            <span class="mono" id="viewerInfo">&nbsp;</span>
-          </div>
-        </div>
-        <p class="hint note">Drag sideways to turn it. The trails follow your wrists.</p>
       </div>
 
       <div class="block b-takes">
@@ -433,8 +409,6 @@ const takesTitle = $("takesTitle"), takesTally = $("takesTally");
 const undoBtn = $("undoBtn"), dlBtn = $("dlBtn"), clearBtn = $("clearBtn"), storageEl = $("storage");
 const modal = $("modal"), modalCancel = $("modalCancel"), modalOk = $("modalOk");
 const pageNo = $("pageNo"), clockEl = $("clock");
-const viewer = $("viewer"), viewCanvas = $("viewCanvas"), vctx = viewCanvas.getContext("2d");
-const viewerEmpty = $("viewerEmpty"), spinBtn = $("spinBtn"), scrub = $("scrub"), viewerInfo = $("viewerInfo");
 
 /* ---------- station clock ---------- */
 function tickClock() {
@@ -614,7 +588,6 @@ function renderTakes() {
   const raw = localStorage.getItem(DATA_KEY) || "";
   const kb = Math.round(raw.length / 1024);
   storageEl.textContent = totalTakes() + " takes in all · " + kb + " KB saved of about 5000 KB";
-  refreshViewer();
 }
 
 addForm.addEventListener("submit", (e) => {
@@ -767,7 +740,6 @@ function draw(pose, left, right) {
 /* ---------- detection loop ---------- */
 function loop() {
   requestAnimationFrame(loop);
-  viewerTick(performance.now());
   rcTick(performance.now());
   if (cam !== "ready" || (currentTab !== "capture" && currentTab !== "recognize")) return;
   if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
@@ -925,302 +897,6 @@ function abortRecording(kind, label, text) {
   setProgress(0);
   updateButtons();
   if (text) showFlash(kind, label, text); else renderStatus();
-}
-
-/* ---------- 3D take viewer ----------
-   Replays the last take as a turning wire figure, in slow motion.
-   Dashed lines trace both wrists over the whole take, so you can see the shape of the movement. */
-const V_POSE_IDS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
-const V_LINES = [[11,12],[11,13],[13,15],[12,14],[14,16],[7,3],[3,2],[2,1],[1,0],[0,4],[4,5],[5,6],[6,8],[9,10]];
-const FRAME_MS = 55;
-const PITCH = 0.2;
-
-let viewTake = null, viewBox = null, gl = null;
-let viewPlaying = true, viewFrame = 0, viewAcc = 0, viewLast = 0;
-let viewYaw = 0.35, viewDir = 1, viewDrag = null;
-let viewVisible = true, viewDirty = true, viewInfoText = "";
-
-// Reads one landmark from a stored frame. Missing hand points are stored as 0,0,0, so they return null.
-function getPt(f, g, i) {
-  if (g === "m") return [0, 0, 0];
-  const base = g === "p" ? 0 : g === "l" ? 99 : 162;
-  const x = f[base + i * 3], y = f[base + i * 3 + 1], z = f[base + i * 3 + 2];
-  if (g !== "p" && x === 0 && y === 0 && z === 0) return null;
-  return [x, y, z];
-}
-
-function prepareViewer() {
-  const pts = [[0, 0, 0]];
-  for (const f of viewTake) {
-    for (const i of V_POSE_IDS) pts.push(getPt(f, "p", i));
-    for (let i = 0; i < 21; i++) { pts.push(getPt(f, "l", i)); pts.push(getPt(f, "r", i)); }
-  }
-  const real = pts.filter(Boolean);
-  const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
-  real.forEach((p) => { for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], p[k]); mx[k] = Math.max(mx[k], p[k]); } });
-  const cx = (mn[0] + mx[0]) / 2, cy = (mn[1] + mx[1]) / 2, cz = (mn[2] + mx[2]) / 2;
-  let r = 0.5;
-  real.forEach((p) => { r = Math.max(r, Math.hypot(p[0] - cx, p[1] - cy, p[2] - cz)); });
-  viewBox = { cx, cy, cz, r, D: r * 4, ring: mx[1] + 0.08 * r };
-  if (gl) glPrepare();
-}
-
-function refreshViewer() {
-  const list = dataset[selected] || [];
-  const t = list.length ? list[list.length - 1] : null;
-  const valid = Array.isArray(t) && t.length > 0 && Array.isArray(t[0]) && t[0].length === 225;
-  const next = valid ? t : null;
-  if (next !== viewTake) {
-    viewTake = next;
-    viewFrame = 0; viewAcc = 0; viewPlaying = true;
-    spinBtn.textContent = "Pause";
-    viewerEmpty.hidden = !!viewTake;
-    spinBtn.disabled = !viewTake;
-    scrub.disabled = !viewTake;
-    if (viewTake) {
-      prepareViewer();
-      scrub.max = String(viewTake.length - 1);
-      scrub.value = "0";
-    }
-  }
-  updateViewerInfo();
-  viewDirty = true;
-}
-
-function updateViewerInfo() {
-  const list = dataset[selected] || [];
-  const text = viewTake ? selected + " · take " + list.length + " · frame " + (viewFrame + 1) + "/" + viewTake.length : " ";
-  if (text !== viewInfoText) { viewInfoText = text; viewerInfo.textContent = text; }
-}
-
-function drawViewer() {
-  if (gl) { drawGL(); return; }
-  const rect = viewCanvas.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const W = Math.max(1, Math.round(rect.width * dpr)), H = Math.max(1, Math.round(rect.height * dpr));
-  if (viewCanvas.width !== W || viewCanvas.height !== H) { viewCanvas.width = W; viewCanvas.height = H; }
-  vctx.clearRect(0, 0, W, H);
-  if (!viewTake || !viewBox) return;
-
-  const vb = viewBox;
-  const scale = Math.min(W, H) * 0.37 / vb.r;
-  const lw = Math.max(2, W / 120);
-  const cosY = Math.cos(viewYaw), sinY = Math.sin(viewYaw);
-  const cosP = Math.cos(PITCH), sinP = Math.sin(PITCH);
-
-  // turns a point around the figure, then squeezes it for perspective. x is flipped so it matches the mirrored camera.
-  const proj = (p) => {
-    const x = p[0] - vb.cx, y = p[1] - vb.cy, z = p[2] - vb.cz;
-    const x1 = x * cosY + z * sinY, z1 = -x * sinY + z * cosY;
-    const y1 = y * cosP - z1 * sinP, z2 = y * sinP + z1 * cosP;
-    const k = vb.D / (vb.D + z2);
-    return { x: W / 2 - x1 * scale * k, y: H / 2 + y1 * scale * k, z: z2, k };
-  };
-
-  vctx.lineCap = "round";
-  vctx.lineJoin = "round";
-
-  // floor ring, so the turning is easy to read
-  vctx.save();
-  vctx.strokeStyle = "rgba(255,255,255,.18)";
-  vctx.lineWidth = lw * 0.6;
-  vctx.beginPath();
-  for (let i = 0; i <= 48; i++) {
-    const a = (i / 48) * Math.PI * 2;
-    const q = proj([vb.cx + Math.cos(a) * vb.r * 0.95, vb.ring, vb.cz + Math.sin(a) * vb.r * 0.95]);
-    if (i) vctx.lineTo(q.x, q.y); else vctx.moveTo(q.x, q.y);
-  }
-  vctx.stroke();
-  vctx.restore();
-
-  // wrist trails across the whole take
-  const trail = (idx, color) => {
-    vctx.save();
-    vctx.setLineDash([lw * 1.2, lw * 1.6]);
-    vctx.strokeStyle = color;
-    vctx.globalAlpha = 0.6;
-    vctx.lineWidth = lw * 0.9;
-    vctx.beginPath();
-    viewTake.forEach((fr, i) => {
-      const q = proj(getPt(fr, "p", idx));
-      if (i) vctx.lineTo(q.x, q.y); else vctx.moveTo(q.x, q.y);
-    });
-    vctx.stroke();
-    vctx.restore();
-  };
-  trail(15, RED);
-  trail(16, BLUE);
-
-  // the figure for the current frame, far parts first
-  const f = viewTake[viewFrame];
-  const segs = [];
-  const addSeg = (a, b, color, w) => {
-    if (!a || !b) return;
-    const pa = proj(a), pb = proj(b);
-    segs.push({ pa, pb, color, w, z: (pa.z + pb.z) / 2 });
-  };
-  for (const [a, b] of V_LINES) addSeg(getPt(f, "p", a), getPt(f, "p", b), VINK, 1.3);
-  addSeg([0, 0, 0], getPt(f, "p", 0), VINK, 1.3);
-  for (const [a, b] of HAND_LINES) {
-    addSeg(getPt(f, "l", a), getPt(f, "l", b), RED, 1);
-    addSeg(getPt(f, "r", a), getPt(f, "r", b), BLUE, 1);
-  }
-  segs.sort((s, t) => t.z - s.z);
-  for (const s of segs) {
-    const k = (s.pa.k + s.pb.k) / 2;
-    vctx.beginPath();
-    vctx.moveTo(s.pa.x, s.pa.y);
-    vctx.lineTo(s.pb.x, s.pb.y);
-    if (s.color !== VINK) {
-      vctx.strokeStyle = INK;
-      vctx.lineWidth = s.w * lw * k + 2;
-      vctx.stroke();
-    }
-    vctx.strokeStyle = s.color;
-    vctx.lineWidth = s.w * lw * k;
-    vctx.stroke();
-  }
-
-  // joints
-  const dot = (p, r) => {
-    if (!p) return;
-    const q = proj(p);
-    vctx.beginPath();
-    vctx.arc(q.x, q.y, r * q.k, 0, Math.PI * 2);
-    vctx.fillStyle = PAPER;
-    vctx.fill();
-    vctx.strokeStyle = INK;
-    vctx.lineWidth = Math.max(1.5, lw * 0.35);
-    vctx.stroke();
-  };
-  [0, 11, 12, 13, 14, 15, 16].forEach((i) => dot(getPt(f, "p", i), lw * 0.95));
-  [4, 8, 12, 16, 20].forEach((i) => { dot(getPt(f, "l", i), lw * 0.7); dot(getPt(f, "r", i), lw * 0.7); });
-}
-
-/* ---------- three.js take viewer (falls back to the 2D drawing if it can't load) ---------- */
-function glPrepare() {
-  const { THREE, group, ring, trailL, trailR } = gl, vb = viewBox, k = 1.6 / vb.r;
-  gl.k = k;
-  const P = (p) => new THREE.Vector3(-(p[0] - vb.cx) * k, -(p[1] - vb.cy) * k, -(p[2] - vb.cz) * k);
-  const fill = (line, idx) => {
-    line.geometry.dispose();
-    line.geometry = new THREE.BufferGeometry().setFromPoints(viewTake.map((fr) => P(getPt(fr, "p", idx))));
-  };
-  fill(trailL, 15); fill(trailR, 16);
-  ring.position.y = -(vb.ring - vb.cy) * k;
-  gl.P = P;
-}
-function drawGL() {
-  if (!viewTake || !viewBox || !gl.P) return;
-  const { THREE, renderer, scene, camera, group, segs, joints } = gl;
-  const rect = viewCanvas.getBoundingClientRect();
-  const W = Math.max(1, Math.round(rect.width)), H = Math.max(1, Math.round(rect.height));
-  if (gl.w !== W || gl.h !== H) {
-    gl.w = W; gl.h = H;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(W, H, false);
-    camera.aspect = W / H; camera.updateProjectionMatrix();
-  }
-  const f = viewTake[viewFrame], P = gl.P;
-  const pt = (g, i) => { const p = getPt(f, g, i); return p ? P(p) : null; };
-  const origin = P([0, 0, 0]);
-  for (const sg of segs) {
-    const a = sg.g1 === "o" ? origin : pt(sg.g1, sg.i1), b = pt(sg.g2, sg.i2), m = sg.mesh;
-    if (!a || !b) { m.visible = false; continue; }
-    gl.dir.subVectors(b, a);
-    const len = gl.dir.length() || 1e-4;
-    m.visible = true;
-    m.position.addVectors(a, b).multiplyScalar(0.5);
-    m.quaternion.setFromUnitVectors(gl.up, gl.dir.normalize());
-    m.scale.set(sg.r, len, sg.r);
-  }
-  for (const j of joints) {
-    const p = pt(j.g, j.i);
-    if (!p) { j.mesh.visible = false; continue; }
-    j.mesh.visible = true; j.mesh.position.copy(p); j.mesh.scale.setScalar(j.r);
-  }
-  group.rotation.y = viewYaw;
-  renderer.render(scene, camera);
-}
-async function initGL() {
-  try {
-    const THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
-    const renderer = new THREE.WebGLRenderer({ canvas: $("glCanvas"), antialias: true, alpha: true });
-    renderer.setClearColor(0x000000, 0);
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
-    camera.position.set(0, 1.1, 5.4); camera.lookAt(0, 0, 0);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-    const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(2, 4, 5); scene.add(key);
-    const group = new THREE.Group(); scene.add(group);
-    const cyl = new THREE.CylinderGeometry(1, 1, 1, 10), sph = new THREE.SphereGeometry(1, 14, 10);
-    const mat = (c) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.55, roughness: 0.4 });
-    const mBody = mat(0x8a8a90), mL = mat(0xc8f560), mR = mat(0xffffff), mHead = mat(0xededee);
-    const segs = [], joints = [];
-    const addSeg = (g1, i1, g2, i2, m, r) => { const mesh = new THREE.Mesh(cyl, m); group.add(mesh); segs.push({ g1, i1, g2, i2, mesh, r }); };
-    const addJoint = (g, i, m, r) => { const mesh = new THREE.Mesh(sph, m); group.add(mesh); joints.push({ g, i, mesh, r }); };
-    for (const [a, b] of V_LINES) addSeg("p", a, "p", b, mBody, 0.035);
-    addSeg("o", 0, "p", 0, mBody, 0.035);
-    for (const [a, b] of HAND_LINES) { addSeg("l", a, "l", b, mL, 0.018); addSeg("r", a, "r", b, mR, 0.018); }
-    [11, 12, 13, 14, 15, 16].forEach((i) => addJoint("p", i, mBody, 0.06));
-    addJoint("p", 0, mHead, 0.13);
-    for (let i = 0; i < 21; i++) { addJoint("l", i, mL, 0.026); addJoint("r", i, mR, 0.026); }
-    const line = (c) => { const l = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.5 })); group.add(l); return l; };
-    const trailL = line(0xc8f560), trailR = line(0xffffff);
-    const ringPts = []; for (let i = 0; i <= 64; i++) { const a = (i / 64) * Math.PI * 2; ringPts.push(new THREE.Vector3(Math.cos(a) * 1.52, 0, Math.sin(a) * 1.52)); }
-    const ring = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14 }));
-    group.add(ring);
-    gl = { THREE, renderer, scene, camera, group, segs, joints, ring, trailL, trailR, dir: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), w: 0, h: 0 };
-    vctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
-    if (viewTake) glPrepare();
-    viewDirty = true;
-  } catch (e) { gl = null; /* keep the 2D viewer */ }
-}
-
-function viewerTick(now) {
-  const dt = Math.min(100, Math.max(0, now - viewLast));
-  viewLast = now;
-  if (currentTab !== "capture" || !viewVisible || !viewTake) return;
-  if (viewPlaying && !viewDrag) {
-    viewYaw += viewDir * dt * 0.00035;
-    if (viewYaw > 0.8) viewDir = -1; else if (viewYaw < -0.8) viewDir = 1;
-  }
-  if (viewPlaying) {
-    viewAcc += dt;
-    while (viewAcc >= FRAME_MS) { viewAcc -= FRAME_MS; viewFrame = (viewFrame + 1) % viewTake.length; }
-    scrub.value = String(viewFrame);
-    updateViewerInfo();
-  }
-  if (viewPlaying || viewDirty) { drawViewer(); viewDirty = false; }
-}
-
-spinBtn.addEventListener("click", () => {
-  viewPlaying = !viewPlaying;
-  spinBtn.textContent = viewPlaying ? "Pause" : "Play";
-  viewDirty = true;
-});
-scrub.addEventListener("input", () => {
-  viewPlaying = false;
-  spinBtn.textContent = "Play";
-  viewFrame = Number(scrub.value) || 0;
-  updateViewerInfo();
-  viewDirty = true;
-});
-viewCanvas.addEventListener("pointerdown", (e) => {
-  viewDrag = { x: e.clientX, yaw: viewYaw };
-  try { viewCanvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-});
-viewCanvas.addEventListener("pointermove", (e) => {
-  if (!viewDrag) return;
-  viewYaw = viewDrag.yaw + (e.clientX - viewDrag.x) * 0.012;
-  viewDirty = true;
-});
-["pointerup", "pointercancel", "lostpointercapture"].forEach((n) => viewCanvas.addEventListener(n, () => { viewDrag = null; }));
-window.addEventListener("resize", () => { viewDirty = true; });
-window.addEventListener("orientationchange", () => { viewDirty = true; });
-if ("ResizeObserver" in window) new ResizeObserver(() => { viewDirty = true; }).observe(viewer);
-if ("IntersectionObserver" in window) {
-  new IntersectionObserver((entries) => { viewVisible = entries[0].isIntersecting; viewDirty = true; }).observe(viewer);
 }
 
 /* ---------- camera + tracker ---------- */
@@ -1687,7 +1363,6 @@ function switchTab(name) {
   next.classList.add(dir);
   next.addEventListener("animationend", () => next.classList.remove("turn-fwd", "turn-back"), { once: true });
   window.scrollTo(0, 0);
-  viewDirty = true;
 }
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => switchTab(t.dataset.tab)));
 
@@ -1706,7 +1381,6 @@ renderHud();
 renderTrain();
 renderRecognize();
 renderSentence();
-initGL();
 </script>
 </body>
 </html>
