@@ -29,7 +29,7 @@ button,input,summary{font:inherit;color:inherit}
 h1{margin:0;font:400 30px/1 var(--display);letter-spacing:0}
 h1 span{color:var(--lime)}
 .label{font:400 11px/1.2 var(--font-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.tag{margin:0}.stop{text-align:right}.clock{display:none}.hazard{display:none}
+.tag{margin:0}.stop{text-align:right}
 .screen{display:none}.screen.active{display:block;animation:fade .25s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .hud{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;padding:0}
@@ -53,6 +53,32 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
 .stage[data-state="ok"]::after{border-color:#fff}
 .mirror{position:absolute;inset:0;transform:scaleX(-1)}
 .mirror.nomirror{transform:none}
+.review{margin-top:10px}
+.review summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:40px;color:var(--muted);font:400 12px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+.review summary::-webkit-details-marker{display:none}
+.review summary::after{content:"+";margin-left:auto}
+.review[open] summary::after{content:"\2212"}
+.review .note{margin:2px 0 8px}
+.rv-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rv-n{font:400 11px/1 var(--font-mono);color:var(--muted);min-width:22px}
+.rv-dots{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:2px}
+.rv-dots i{display:block;aspect-ratio:1;border-radius:50%;background:#2a2a2e}
+.rv-dots i.on{background:var(--lime)}
+.rv-q{font:400 11px/1 var(--font-mono);white-space:nowrap}
+.rv-q.bad{color:var(--hot)}
+.rv-x{width:32px;height:32px;border-radius:50%;border:1px solid #2e2e32;background:transparent;color:var(--muted);cursor:pointer;font:400 16px/1 var(--font-mono)}
+.rv-x:hover{color:var(--hot);border-color:var(--hot)}
+.trk{margin:6px 8px 4px}
+.trk summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:40px;color:var(--muted);font:400 12px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+.trk summary::-webkit-details-marker{display:none}
+.trk summary::after{content:"+";margin-left:auto}
+.trk[open] summary::after{content:"\2212"}
+.trk-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:4px}
+.trk-grid div{background:#000;border-radius:14px;padding:9px 8px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.trk-grid .label{font-size:9px;letter-spacing:.06em}
+.trk-grid b{font:700 15px/1 var(--font-head);white-space:nowrap}
+.trk-grid b[data-bad]{color:var(--hot)}
+.trk .note{margin:10px 0 6px;color:var(--text)}
 .camflip{position:absolute;right:12px;top:12px;z-index:6;width:44px;height:44px;border-radius:50%;background:#000;border:1px solid var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer;touch-action:manipulation;transition:background .15s}
 .camflip:hover:not(:disabled){background:var(--raised)}
 .camflip:disabled{opacity:.4;cursor:not-allowed}
@@ -212,7 +238,6 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
     <div class="stop">
       <div>
         <div class="label" id="pageNo">01 / Capture</div>
-        <div class="clock" id="clock" aria-hidden="true">--:--</div>
       </div>
     </div>
   </header>
@@ -263,6 +288,17 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
           <span class="s-text" id="sText">Tap Start camera to begin.</span>
         </div>
           </div>
+          <details class="trk" id="trk">
+            <summary>Tracking check</summary>
+            <div class="trk-grid">
+              <div><span class="label">FPS</span><b id="tkFps">--</b></div>
+              <div><span class="label">Body</span><b id="tkBody">--</b></div>
+              <div><span class="label">Hands</span><b id="tkHands">--</b></div>
+              <div><span class="label">Light</span><b id="tkLight">--</b></div>
+              <div><span class="label">Drops</span><b id="tkDrops">--</b></div>
+            </div>
+            <p class="note" id="tkVerdict">Start the camera to check tracking.</p>
+          </details>
         </div>
         <button class="btn btn-red btn-big btn-wide" id="recBtn" type="button">Record HELLO</button>
         <div class="card rec-card">
@@ -281,6 +317,12 @@ h2::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--li
         <div class="card">
           <div class="takes-board" id="takesTally"></div>
         </div>
+        <details class="review" id="review">
+          <summary>Review takes</summary>
+          <p class="note" id="rvSummary"></p>
+          <div id="rvList"></div>
+          <button class="btn btn-small btn-clear" id="rmRough" type="button" hidden>Delete rough takes</button>
+        </details>
         <p class="hint note">Aim for 10 or more takes of each sign. Shift a little closer or further each time.</p>
         <div class="btn-row">
           <button class="btn" id="undoBtn" type="button">Undo last take</button>
@@ -399,7 +441,7 @@ const DATA_KEY = "sign-dataset-v1";
 const LIST_KEY = "sign-list-v1";
 const DEFAULT_SIGNS = ["HELLO", "THANKS", "YES"];
 const LOST_BODY_MS = 3000;
-const INK = "#0a0a0b", RED = "#c8f560", BLUE = "#ffffff", PAPER = "#ededee", VINK = "#a8a8b0";
+const INK = "#0a0a0b", RED = "#c8f560", BLUE = "#ffffff", PAPER = "#ededee";
 
 const POSE_LINES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]];
 const HAND_LINES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
@@ -415,15 +457,7 @@ const progEl = $("prog"), progCount = $("progCount"), recBtn = $("recBtn");
 const takesTitle = $("takesTitle"), takesTally = $("takesTally");
 const undoBtn = $("undoBtn"), dlBtn = $("dlBtn"), clearBtn = $("clearBtn"), storageEl = $("storage");
 const modal = $("modal"), modalCancel = $("modalCancel"), modalOk = $("modalOk");
-const pageNo = $("pageNo"), clockEl = $("clock");
-
-/* ---------- station clock ---------- */
-function tickClock() {
-  const d = new Date();
-  clockEl.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
-tickClock();
-setInterval(tickClock, 10000);
+const pageNo = $("pageNo");
 
 /* ---------- storage ---------- */
 function loadJSON(key, fallback) {
@@ -460,6 +494,36 @@ let frames = [];
 let lastGoodAt = 0;
 let flash = null;            // { kind: ok|bad|info, label, text, until }
 let live = { pose: false, hands: 0 };
+/* tracking check: frame rate, body/hand visibility, light level, how often a hand is lost */
+const trk = { ts: [], drops: [], left: false, right: false, any: false, lum: null, at: 0 };
+const trkCv = document.createElement("canvas"); trkCv.width = 32; trkCv.height = 24;
+const trkCtx = trkCv.getContext("2d", { willReadFrequently: true });
+function trkSet(id, text, bad) { const e = $(id); e.textContent = text; if (bad) e.setAttribute("data-bad", ""); else e.removeAttribute("data-bad"); }
+function trkTick(now) {
+  while (trk.ts.length && now - trk.ts[0] > 1000) trk.ts.shift();
+  while (trk.drops.length && now - trk.drops[0] > 5000) trk.drops.shift();
+  if (now - trk.at < 400 || !$("trk").open) return;
+  trk.at = now;
+  if (cam !== "ready") { ["tkFps", "tkBody", "tkHands", "tkLight", "tkDrops"].forEach((id) => trkSet(id, "--", false)); $("tkVerdict").textContent = "Start the camera to check tracking."; return; }
+  try {
+    trkCtx.drawImage(video, 0, 0, 32, 24);
+    const px = trkCtx.getImageData(0, 0, 32, 24).data; let sum = 0;
+    for (let i = 0; i < px.length; i += 4) sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    trk.lum = sum / (px.length / 4);
+  } catch (e) { trk.lum = null; }
+  const fps = trk.ts.length, dark = trk.lum !== null && trk.lum < 55, bright = trk.lum !== null && trk.lum > 215, drops = trk.drops.length;
+  trkSet("tkFps", String(fps), fps < 18);
+  trkSet("tkBody", live.pose ? "OK" : "No", !live.pose);
+  trkSet("tkHands", trk.left && trk.right ? "L + R" : trk.left ? "L" : trk.right ? "R" : "none", false);
+  trkSet("tkLight", trk.lum === null ? "--" : dark ? "Dark" : bright ? "Bright" : "OK", dark || bright);
+  trkSet("tkDrops", String(drops), drops >= 3);
+  $("tkVerdict").textContent = !live.pose ? "I can't see your shoulders. Step back so your head and shoulders are in view."
+    : dark ? "Too dark. Face a light so fast hands stay sharp."
+    : bright ? "Very bright behind or on you. Avoid a window directly behind you."
+    : fps < 18 ? "Low frame rate. Close other apps; the tracker is running slowly."
+    : drops >= 3 ? "Hands keep getting lost. Sign a little slower, add light, and keep both hands inside the frame."
+    : "Tracking looks good.";
+}
 let currentTab = "capture";
 
 let landmarker = null, stream = null;
@@ -594,8 +658,40 @@ function renderTakes() {
   takesTally.innerHTML = tallyHTML(count);
   const raw = localStorage.getItem(DATA_KEY) || "";
   const kb = Math.round(raw.length / 1024);
+  renderReview();
   storageEl.textContent = totalTakes() + " takes in all · " + kb + " KB saved of about 5000 KB";
 }
+
+/* review every saved take of the selected sign: where were the hands tracked? */
+function renderReview() {
+  const list = dataset[selected] || [], box = $("rvList");
+  box.textContent = "";
+  const qs = list.map((t) => takeQuality(t));
+  const rough = qs.filter((q) => q.pct < 60).length;
+  $("rvSummary").textContent = !list.length ? "No takes of " + selected + " yet."
+    : "Average hands tracked: " + Math.round(qs.reduce((a, q) => a + q.pct, 0) / qs.length) + "%"
+      + (rough ? " \u00b7 " + rough + " rough take" + (rough === 1 ? "" : "s") + " (under 60%)" : " \u00b7 all takes look usable");
+  const rm = $("rmRough"); rm.hidden = !rough; rm.textContent = "Delete " + rough + " rough take" + (rough === 1 ? "" : "s");
+  list.forEach((take, i) => {
+    const row = document.createElement("div"); row.className = "rv-row";
+    const n = document.createElement("span"); n.className = "rv-n"; n.textContent = "#" + (i + 1);
+    const dots = document.createElement("div"); dots.className = "rv-dots"; dots.setAttribute("aria-hidden", "true");
+    for (let k = 0; k < 30; k++) {
+      const f = take[Math.min(take.length - 1, Math.round((k / 29) * (take.length - 1)))], d = document.createElement("i");
+      let has = false; if (f) for (let j = 99; j < 225; j++) if (f[j] !== 0) { has = true; break; }
+      if (has) d.className = "on"; dots.appendChild(d);
+    }
+    const q = document.createElement("span"); q.className = "rv-q" + (qs[i].pct < 60 ? " bad" : ""); q.textContent = qs[i].label + " " + qs[i].pct + "%";
+    const x = document.createElement("button"); x.type = "button"; x.className = "rv-x"; x.textContent = "\u00d7"; x.setAttribute("aria-label", "Delete take " + (i + 1));
+    x.addEventListener("click", () => { list.splice(i, 1); saveJSON(DATA_KEY, dataset); renderSigns(); renderTakes(); renderHud(); });
+    row.append(n, dots, q, x); box.appendChild(row);
+  });
+}
+$("rmRough").addEventListener("click", () => {
+  const list = dataset[selected] || [];
+  dataset[selected] = list.filter((t) => takeQuality(t).pct >= 60);
+  saveJSON(DATA_KEY, dataset); renderSigns(); renderTakes(); renderHud();
+});
 
 addForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -684,7 +780,7 @@ function first(arr) {
   if (!arr || !arr.length) return null;
   return Array.isArray(arr[0]) ? arr[0] : arr;
 }
-const round4 = (v) => Math.round(v * 1e4) / 1e4;
+const round3 = (v) => Math.round(v * 1e3) / 1e3;
 
 function buildFrame(pose, left, right) {
   if (!pose || pose.length < 33) return null;
@@ -696,7 +792,7 @@ function buildFrame(pose, left, right) {
   const add = (lms, n) => {
     for (let i = 0; i < n; i++) {
       const p = lms && lms[i];
-      if (p) out.push(round4((p.x - cx) / dist), round4((p.y - cy) / dist), round4((p.z - cz) / dist));
+      if (p) out.push(round3((p.x - cx) / dist), round3((p.y - cy) / dist), round3((p.z - cz) / dist));
       else out.push(0, 0, 0);
     }
   };
@@ -748,6 +844,7 @@ function draw(pose, left, right) {
 function loop() {
   requestAnimationFrame(loop);
   rcTick(performance.now());
+  trkTick(performance.now());
   if (cam !== "ready" || (currentTab !== "capture" && currentTab !== "recognize")) return;
   if (video.readyState < 2 || video.currentTime === lastVideoTime) return;
   lastVideoTime = video.currentTime;
@@ -773,6 +870,10 @@ function handleResult(res) {
   const right = first(res.rightHandLandmarks);
   live.pose = !!pose;
   live.hands = (left ? 1 : 0) + (right ? 1 : 0);
+  const tn = performance.now(), anyH = !!(left || right);
+  trk.ts.push(tn); trk.left = !!left; trk.right = !!right;
+  if (trk.any && !anyH) trk.drops.push(tn);
+  trk.any = anyH;
   /* track at the camera's full rate, but feed recording and recognition at ~30 fps so takes stay consistent */
   const nowT = performance.now(), feed = nowT - lastFeedAt >= 28;
   if (feed) lastFeedAt = nowT;
@@ -882,6 +983,11 @@ function finishRecording() {
   const sample = frames;
   recState = "idle";
   frames = [];
+  if (takeQuality(sample).pct < 20) {
+    showFlash("bad", "No hands", "I barely saw your hands in that take, so I did not save it. Keep both hands inside the frame and try again.", 5000);
+    renderSigns(); renderTakes(); renderHud();
+    return;
+  }
   if (!Array.isArray(dataset[sign])) dataset[sign] = [];
   dataset[sign].push(sample);
   if (!saveJSON(DATA_KEY, dataset)) {
@@ -932,7 +1038,7 @@ let facing = "user"; /* front camera by default */
 async function startCamera() {
   if (cam === "loading") return;
   if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setCamError("The camera needs a secure https link. Open the Netlify link, not the file itself.");
+    setCamError("The camera needs a secure https page. Open the https link of this site in Chrome, not the saved file and not a preview inside another app.");
     return;
   }
   cam = "loading";
@@ -1003,20 +1109,52 @@ $("flipBtn").addEventListener("click", flipCamera);
 /* ---------- Train: sequence matching (DTW + nearest neighbour) ---------- */
 const MODEL_KEY = "sign-model-v1", DTW_BAND = 12, MIN_TAKES_TO_TEST = 3, POSE_USE = [0, 11, 12, 13, 14, 15, 16];
 let model = loadJSON(MODEL_KEY, null), training = false;
-if (model && model.v !== 2) model = null; /* older models used different features: train again */
+if (model && model.v !== 4) model = null; /* older models used different features: train again */
 /* Features per frame: upper-body pose, hand landmarks (11 per hand), hand SHAPE (relative to the wrist,
-   scaled by hand size) and wrist MOTION direction (speed-independent). */
-const HAND_IDX = [0, 2, 4, 5, 8, 9, 12, 13, 16, 17, 20], SHAPE_W = 0.35, MOTION_W = 0.8;
-function takeFeatures(take) {
-  const n = take.length, dim = POSE_USE.length * 3 + HAND_IDX.length * 6 + (HAND_IDX.length - 1) * 6 + 6, d = new Float32Array(n * dim);
-  const present = (f, base) => { for (let i = 0; i < 63; i++) if (f[base + i] !== 0) return true; return false; };
-  const wrist = (f, base) => (present(f, base) ? [f[base], f[base + 1], f[base + 2]] : null);
+   scaled by hand size), wrist MOTION direction (speed-independent) and palm ORIENTATION
+   (which way the palm faces and which way the fingers point). Short tracking gaps are filled first. */
+const HAND_IDX = [0, 2, 4, 5, 8, 9, 12, 13, 16, 17, 20], SHAPE_W = 0.35, MOTION_W = 0.8, ORI_W = 0.5, HEAD_W = 0.6, MAX_GAP = 5;
+const handPresent = (f, base) => { for (let i = 0; i < 63; i++) if (f[base + i] !== 0) return true; return false; };
+/* a hand that vanishes for a few frames between two good frames is filled in by straight-line interpolation */
+function fillGaps(take) {
+  const out = take.slice();
+  for (const base of [99, 162]) {
+    const has = out.map((f) => handPresent(f, base));
+    let i = 0;
+    while (i < out.length) {
+      if (has[i]) { i++; continue; }
+      let j = i; while (j < out.length && !has[j]) j++;
+      if (i > 0 && j < out.length && j - i <= MAX_GAP) {
+        const a = out[i - 1], b = out[j];
+        for (let k = i; k < j; k++) {
+          const t = (k - (i - 1)) / (j - (i - 1)), f = out[k].slice();
+          for (let q = 0; q < 63; q++) f[base + q] = a[base + q] + (b[base + q] - a[base + q]) * t;
+          out[k] = f;
+        }
+      }
+      i = j;
+    }
+  }
+  return out;
+}
+/* head turn / nod / tilt, read from the nose, eyes and ears, relative to the ear distance */
+function headPose(f) {
+  const ed = Math.hypot(f[21] - f[24], f[22] - f[25]), ex = (f[21] + f[24]) / 2, ey = (f[22] + f[25]) / 2;
+  if (ed < 1e-3) return null;
+  const eyeD = Math.hypot(f[15] - f[6], f[16] - f[7]) || 1;
+  return [(f[0] - ex) / ed, (f[1] - ey) / ed, (f[16] - f[7]) / eyeD];   /* yaw, pitch, roll */
+}
+const unit = (x, y, z) => { const m = Math.hypot(x, y, z) || 1; return [x / m, y / m, z / m]; };
+function takeFeatures(raw) {
+  const take = fillGaps(raw), n = take.length;
+  const dim = POSE_USE.length * 3 + HAND_IDX.length * 6 + (HAND_IDX.length - 1) * 6 + 6 + 12 + 6, d = new Float32Array(n * dim);
+  const wrist = (f, base) => (handPresent(f, base) ? [f[base], f[base + 1], f[base + 2]] : null);
   take.forEach((f, t) => {
     let o = t * dim;
     for (const i of POSE_USE) { d[o++] = f[i * 3]; d[o++] = f[i * 3 + 1]; d[o++] = f[i * 3 + 2]; }
     for (const base of [99, 162]) for (const i of HAND_IDX) { d[o++] = f[base + i * 3]; d[o++] = f[base + i * 3 + 1]; d[o++] = f[base + i * 3 + 2]; }
     for (const base of [99, 162]) {
-      if (!present(f, base)) { o += (HAND_IDX.length - 1) * 3; continue; }
+      if (!handPresent(f, base)) { o += (HAND_IDX.length - 1) * 3; continue; }
       const wx = f[base], wy = f[base + 1], wz = f[base + 2];
       const sc = Math.hypot(f[base + 27] - wx, f[base + 28] - wy, f[base + 29] - wz) || 1;
       for (const i of HAND_IDX.slice(1)) { d[o++] = ((f[base + i * 3] - wx) / sc) * SHAPE_W; d[o++] = ((f[base + i * 3 + 1] - wy) / sc) * SHAPE_W; d[o++] = ((f[base + i * 3 + 2] - wz) / sc) * SHAPE_W; }
@@ -1027,6 +1165,22 @@ function takeFeatures(take) {
         const vx = cur[0] - old[0], vy = cur[1] - old[1], vz = cur[2] - old[2], m = Math.hypot(vx, vy, vz) || 1, k = Math.min(1, m * 15) / m * MOTION_W;
         d[o++] = vx * k; d[o++] = vy * k; d[o++] = vz * k;
       } else o += 3;
+    }
+    for (const base of [99, 162]) {
+      if (!handPresent(f, base)) { o += 6; continue; }
+      const wx = f[base], wy = f[base + 1], wz = f[base + 2];
+      const ax = f[base + 15] - wx, ay = f[base + 16] - wy, az = f[base + 17] - wz;   /* wrist -> index knuckle */
+      const bx = f[base + 51] - wx, by = f[base + 52] - wy, bz = f[base + 53] - wz;   /* wrist -> pinky knuckle */
+      const nrm = unit(ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx);        /* palm normal */
+      const dir = unit(f[base + 27] - wx, f[base + 28] - wy, f[base + 29] - wz);       /* fingers point */
+      d[o++] = nrm[0] * ORI_W; d[o++] = nrm[1] * ORI_W; d[o++] = nrm[2] * ORI_W;
+      d[o++] = dir[0] * ORI_W; d[o++] = dir[1] * ORI_W; d[o++] = dir[2] * ORI_W;
+    }
+    /* head: where it is, and how it moved over the last 2 frames (nods and shakes) */
+    const hp = headPose(f), hq = t >= 2 ? headPose(take[t - 2]) : null;
+    if (hp) {
+      d[o++] = hp[0] * HEAD_W; d[o++] = hp[1] * HEAD_W; d[o++] = hp[2] * HEAD_W;
+      if (hq) { d[o++] = (hp[0] - hq[0]) * HEAD_W * 3; d[o++] = (hp[1] - hq[1]) * HEAD_W * 3; d[o++] = (hp[2] - hq[2]) * HEAD_W * 3; }
     }
   });
   return { d, n, dim };
@@ -1103,7 +1257,7 @@ async function runTrain() {
   const p90 = (arr) => { const a2 = arr.slice().sort((x, y) => x - y); return a2.length ? a2[Math.min(a2.length - 1, Math.floor(a2.length * 0.9))] * 1.3 : 0; };
   const all = Object.values(own).flat(), thr = p90(all), thrBy = {};
   Object.keys(own).forEach((l) => { thrBy[l] = Math.max(p90(own[l]), thr * 0.7); });
-  model = { v: 2, at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: N, per, thr, thrBy };
+  model = { v: 4, at: Date.now(), sig: dataSig(), acc: tot ? Math.round((ok / tot) * 100) : 0, takes: N, per, thr, thrBy };
   saveJSON(MODEL_KEY, model);
   training = false; $("trBtn").disabled = false;
   $("trBar").style.width = "100%";
@@ -1150,13 +1304,17 @@ $("trBtn").addEventListener("click", runTrain);
 $("trGo").addEventListener("click", () => switchTab("capture"));
 
 /* ---------- Recognize: live reading + challenge ---------- */
-const RC_EVERY = 150, RC_BUF = 60, RC_LENS = [14, 20, 30, 42], RC_CONF_MIN = 50, CH_ROUND_MS = 60000;
+const RC_EVERY = 200, RC_MAX = 12, RC_BUF = 60, RC_LENS = [14, 20, 30, 42], RC_CONF_MIN = 50, RC_LIVE = 3, CH_ROUND_MS = 60000;
 let rcBuf = [], rcTpl = [], rcLastEval = 0, rcCand = "", rcCandN = 0, rcLast = "", rcArmed = true, rcHist = [], rcUi = 0;
 const ch = { on: false, target: "", end: 0, shown: 0, score: 0 };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const rcReady = () => !!(model && model.thr);
 for (let i = 0; i < 10; i++) { const c = document.createElement("i"); c.className = "cell"; $("rcConf").appendChild(c); }
-function rcLoad() { rcTpl = buildTemplates(); rcBuf = []; rcCand = ""; rcCandN = 0; rcArmed = true; }
+function rcLoad() {
+  const by = {}; rcTpl = [];
+  buildTemplates().forEach((t) => (by[t.label] = by[t.label] || []).push(t));
+  Object.keys(by).forEach((l) => { const a = by[l]; if (a.length <= RC_MAX) rcTpl.push(...a); else for (let i = 0; i < RC_MAX; i++) rcTpl.push(a[Math.floor((i * a.length) / RC_MAX)]); });
+  rcBuf = []; rcCand = ""; rcCandN = 0; rcArmed = true; }
 function rcShow(word, conf, sub) {
   $("rcWord").textContent = word || "--";
   $("rcHudWord").textContent = word || "--";
@@ -1182,9 +1340,11 @@ function rcFeed(pose, left, right) {
     const rank = classifyTake(w, rcTpl);
     if (!rank.length) continue;
     const label = rank[0][0], d1 = rank[0][1], d2 = rank[1] ? rank[1][1] : d1 * 2, thr = (model.thrBy && model.thrBy[label]) || model.thr;
-    const margin = (d2 - d1) / d2;
-    const conf = Math.round(100 * clamp01((thr - d1) / (thr * 0.6)) * (0.6 + 0.4 * clamp01(margin * 3)));
-    if (d1 < thr && margin > 0.08 && conf >= RC_CONF_MIN && (!best || conf > best.conf)) best = { label, conf };
+    /* live windows never line up as neatly as recorded takes, so allow RC_LIVE x the training distance,
+       and lean on how much closer the best sign is than the runner-up */
+    const margin = (d2 - d1) / d2, lim = thr * RC_LIVE;
+    const conf = Math.round(100 * (0.5 * clamp01(1 - d1 / (thr * 4)) + 0.5 * clamp01(margin / 0.5)));
+    if (d1 < lim && margin > 0.15 && conf >= RC_CONF_MIN && (!best || conf > best.conf)) best = { label, conf };
   }
   if (!best) {
     rcCand = ""; rcCandN = 0;
@@ -1365,12 +1525,10 @@ $("snUndo").addEventListener("click", () => { sent.words.pop(); sentSave(); rend
 $("snClear").addEventListener("click", () => { sent.words = []; sentSave(); snStopSpeech(); renderSentence(); });
 
 /* ---------- tabs (with a page turn) ---------- */
-const TAB_ORDER = ["capture", "train", "recognize", "sentence"];
 const TAB_NAMES = { capture: "01 / Capture", train: "02 / Train", recognize: "03 / Recognize", sentence: "04 / Sentence" };
 function switchTab(name) {
   if (name === currentTab) return;
   if (recState !== "idle") abortRecording("info", "Stopped", "Recording stopped because you left the Capture tab.");
-  const dir = TAB_ORDER.indexOf(name) > TAB_ORDER.indexOf(currentTab) ? "turn-fwd" : "turn-back";
   currentTab = name;
   document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === "screen-" + name));
   document.querySelectorAll(".tab").forEach((t) => {
@@ -1383,11 +1541,6 @@ function switchTab(name) {
   if (name === "sentence") renderSentence();
   if (name === "train") renderTrain();
   if (name === "recognize") { rcLoad(); renderRecognize(); }
-  const next = $("screen-" + name);
-  next.classList.remove("turn-fwd", "turn-back");
-  void next.offsetWidth;
-  next.classList.add(dir);
-  next.addEventListener("animationend", () => next.classList.remove("turn-fwd", "turn-back"), { once: true });
   window.scrollTo(0, 0);
 }
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => switchTab(t.dataset.tab)));
